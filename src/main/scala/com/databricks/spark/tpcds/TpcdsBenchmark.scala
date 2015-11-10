@@ -156,11 +156,6 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     Seq(2, 3, 4, 7, 8, 11, 13, 15, 17, 19, 21, 25, 26, 28, 29, 31, 34, 37, 38, 40, 42, 43, 46, 48,
       52, 55, 59, 61, 64, 65, 66, 68, 71, 72, 73, 74, 75, 76, 78, 79, 82, 84, 85, 87, 88, 90, 91,
       93, 96, 97).map(getQuery(_))
-    /*
-    Seq(q2(), q3(), q4(), q7(), q8(), q11(), q13(), q15(), q17(), q19(), q21(), q25(), q26(),
-      q28(), q29(), q31(), q34(), q37(), q38(), q40(), q42(), q43(), q46(), q48(), q52(), q55(),
-      q59(), q61(), q64(), q65(), q66(), q68(), q71(), q72(), q73(), q74(), q75(), q76(), q78(),
-      q79(), q82(), q84(), q85(), q87(), q88(), q90(), q91(), q93(), q96(), q97())*/
   }
 
   /**
@@ -201,8 +196,8 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   // Fact tables
   //
   def catalog_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}catalog_returns(
-        | cr_returned_date_sk BIGINT
+    s"""CREATE TEMPORARY TABLE ${prefix}catalog_returns(
+        | cr_returned_date_sk BIGINT,
         | cr_returned_time_sk BIGINT,
         | cr_item_sk BIGINT,
         | cr_refunded_customer_sk BIGINT,
@@ -233,7 +228,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
     
   def catalog_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}catalog_sales(
+    s"""CREATE TEMPORARY TABLE ${prefix}catalog_sales(
         | cs_sold_date_sk BIGINT,
         | cs_sold_time_sk BIGINT,
         | cs_ship_date_sk BIGINT,
@@ -272,7 +267,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def inventory(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}inventory(
+    s"""CREATE TEMPORARY TABLE ${prefix}inventory(
         | inv_date_sk BIGINT,
         | inv_item_sk BIGINT,
         | inv_warehouse_sk BIGINT,
@@ -281,7 +276,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
   
   def store_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}store_returns(
+    s"""CREATE TEMPORARY TABLE ${prefix}store_returns(
         | sr_returned_date_sk BIGINT,
         | sr_return_time_sk BIGINT,
         | sr_item_sk BIGINT,
@@ -306,7 +301,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
   
   def store_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}store_sales(
+    s"""CREATE TEMPORARY TABLE ${prefix}store_sales(
         | ss_sold_date_sk BIGINT,
         | ss_sold_time_sk BIGINT,
         | ss_item_sk BIGINT,
@@ -334,7 +329,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
   
   def web_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}web_returns(
+    s"""CREATE TEMPORARY TABLE ${prefix}web_returns(
         | wr_returned_date_sk BIGINT,
         | wr_returned_time_sk BIGINT,
         | wr_item_sk BIGINT,
@@ -363,7 +358,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
   
   def web_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}web_sales(
+    s"""CREATE TEMPORARY TABLE ${prefix}web_sales(
         | ws_sold_date_sk BIGINT,
         | ws_sold_time_sk BIGINT,
         | ws_ship_date_sk BIGINT,
@@ -406,7 +401,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   //
   
   def call_center(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}call_center
+    s"""CREATE TEMPORARY TABLE ${prefix}call_center
         | cc_call_center_sk BIGINT,
         | cc_call_center_id STRING,
         | cc_rec_start_date DATE,
@@ -442,7 +437,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def catalog_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}catalog_page
+    s"""CREATE TEMPORARY TABLE ${prefix}catalog_page
         | cp_catalog_page_sk BIGINT,
         | cp_catalog_page_id STRING,
         | cp_start_date_sk INT,
@@ -456,7 +451,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def customer(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}customer
+    s"""CREATE TEMPORARY TABLE ${prefix}customer
         |  c_customer_sk BIGINT,
         |  c_customer_id STRING,
         |  c_current_cdemo_sk BIGINT,
@@ -479,7 +474,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def customer_address(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}customer_address
+    s"""CREATE TEMPORARY TABLE ${prefix}customer_address
         | a_address_sk BIGINT,
         | ca_address_id STRING,
         | ca_street_number STRING,
@@ -497,7 +492,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def customer_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}customer_demographics
+    s"""CREATE TEMPORARY TABLE ${prefix}customer_demographics
         | cd_demo_sk BIGINT,
         | cd_gender STRING,
         | cd_marital_status STRING,
@@ -511,7 +506,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def date_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}date_dim
+    s"""CREATE TEMPORARY TABLE ${prefix}date_dim
         | d_date_sk BIGINT,
         | d_date_id STRING,
         | d_date DATE,
@@ -544,7 +539,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def household_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}household_demographics
+    s"""CREATE TEMPORARY TABLE ${prefix}household_demographics
         | hd_demo_sk BIGINT,
         | hd_income_band_sk BIGINT,
         | hd_buy_potential STRING,
@@ -554,7 +549,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def income_band(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}income_band
+    s"""CREATE TEMPORARY TABLE ${prefix}income_band
         | ib_income_band_sk BIGINT,
         | ib_lower_bound INT,
         | ib_upper_bound INT
@@ -562,7 +557,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def item(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}item
+    s"""CREATE TEMPORARY TABLE ${prefix}item
         | i_item_sk BIGINT,
         | i_item_id STRING,
         | i_rec_start_date,
@@ -589,7 +584,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def promotion(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}promotion
+    s"""CREATE TEMPORARY TABLE ${prefix}promotion
         | p_promo_sk BIGINT,
         | p_promo_id STRING,
         | p_start_date_sk BIGINT,
@@ -613,7 +608,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def reason(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}reason
+    s"""CREATE TEMPORARY TABLE ${prefix}reason
         | r_reason_sk BIGINT,
         | r_reason_id STRING,
         | r_reason_desc STRING
@@ -621,7 +616,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def ship_mode(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}ship_mode
+    s"""CREATE TEMPORARY TABLE ${prefix}ship_mode
         | sm_ship_mode_sk BIGINT,
         | sm_ship_mode_id STRING,
         | sm_type STRING,
@@ -632,7 +627,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def store(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}store
+    s"""CREATE TEMPORARY TABLE ${prefix}store
         | s_store_sk BIGINT,
         | s_store_id STRING,
         | s_rec_start_date DATE,
@@ -666,7 +661,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def time_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}time_dim
+    s"""CREATE TEMPORARY TABLE ${prefix}time_dim
         | t_time_sk BIGINT,
         | t_time_id STRING,
         | t_time INT,
@@ -681,7 +676,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def warehouse(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}warehouse
+    s"""CREATE TEMPORARY TABLE ${prefix}warehouse
         | w_warehouse_sk BIGINT,
         | w_warehouse_id STRING,
         | w_warehouse_name,
@@ -700,7 +695,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def web_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}web_page
+    s"""CREATE TEMPORARY TABLE ${prefix}web_page
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -719,7 +714,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def web_site(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE {$prefix}web_site
+    s"""CREATE TEMPORARY TABLE ${prefix}web_site
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -753,7 +748,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   /**
-    * If randomize, returns a value value in `values`. Otherwise, returns the first value.
+    * If randomize, returns a random value in `values`. Otherwise, returns the first value.
     */
   private[tpcds] def getValue[A](values: A*): A = {
     if (randomize) {
@@ -763,6 +758,9 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     }
   }
 
+  /** 
+   *  If randomize, returns a random state. Otherwise, returns 'v'.
+   */
   private def getState(v: String): String = {
     if (randomize) {
       getValue("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN",
@@ -774,6 +772,9 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     }
   }
 
+  /** 
+   *  If randomize, returns a random category. Otherwise, returns 'v'.
+   */
   private def getCategory(v: String): String = {
     if (randomize) {
       getValue("Sports", "Books", "Home", "Electronics", "Jewelry")
@@ -782,6 +783,9 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     }
   }
 
+  /** 
+   *  If randomize, returns a random gender. Otherwise, returns 'v'.
+   */
   private[tpcds] def getGender(v: String): String = {
     if (randomize) {
       getValue("M", "F")
@@ -790,6 +794,9 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     }
   }
 
+  /** 
+   *  If randomize, returns a random education. Otherwise, returns 'v'.
+   */
   private[tpcds] def getEducation(v: String): String = {
     if (randomize) {
       getValue("Advanced Degree", "College", "2 yr Degree", "4 yr Degree", "Unknown")
@@ -798,6 +805,9 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     }
   }
 
+  /** 
+   *  If randomize, returns a random marital status. Otherwise, returns 'v'.
+   */
   private[tpcds] def getMartialStatus(v: String): String = {
     if (randomize) {
       getValue("M", "S", "W", "D")
@@ -838,6 +848,10 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     v
   }
 
+  /**
+   * If randomize, returns a random list of |v| using p to generate the list.
+   * Otherwise, returns v.
+   */
   private def getList[A](v: Seq[A], p: (A) => A): Seq[A] = {
     if (randomize) {
       v.map(x => p(v.head))

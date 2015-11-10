@@ -21,10 +21,13 @@ version: 1.2.0
 ```
 
 ## Using with Spark shell
-This package can be added to  Spark using the `--packages` command line option.  For example, to include it when starting the spark shell:
+```
+bin/spark-shell --jars <PATH to JAR>
 
-## Features
-
+scala> import com.databricks.spark.tpcds._
+scala> val tpcds = new TpcdsBenchmark(sqlContext)
+scala> tpcds.registerTables()
+scala> sql(tpcds.getQuery(1))
 
 ## Building From Source
 This library is built with [SBT](http://www.scala-sbt.org/0.13/docs/Command-Line-Reference.html), which is automatically downloaded by the included shell script. To build a JAR file simply run `sbt/sbt package` from the project root. The build configuration includes support for both Scala 2.10 and 2.11.

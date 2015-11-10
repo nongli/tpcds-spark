@@ -32,7 +32,7 @@ object TpcdsBenchmark {
 //
 // TODO: should explicit alias make original unresolvable?
 // e.g. select col a from t order by col. (order by a works)
-case class TpcdsBenchmark(val randomize: Boolean = false) {
+case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   /**
     * Returns the query string by index/name
     */
@@ -48,7 +48,7 @@ case class TpcdsBenchmark(val randomize: Boolean = false) {
       case 8 => Q8.query(this).queries.head
       case 9 => Q9.query(this).queries.head
       case 10 => Q10.query(this).queries.head
-      case 11 => q11()
+      case 11 => Q11.query(this).queries.head
       case 12 => q12()
       case 13 => q13()
       case 14 => q14()
@@ -164,573 +164,577 @@ case class TpcdsBenchmark(val randomize: Boolean = false) {
   }
 
   /**
-    * Registers all the tables to run the queries as temp tables. Returns the lsit of
-    * temp tables registered.
-    *
+    * Registers all the tables as temp tables in `db`.
     * TODO: non-nullable columns (there many)
     * TODO: support CHAR(N)
     */
-  def registerTables(ctx: SQLContext): Seq[String] = {
-    //
-    // Fact tables
-    //
+  def registerTables(db: Option[String] = None) = {
+    val prefix = ""
+    ctx.sql(catalog_returns(prefix))
+    ctx.sql(catalog_sales(prefix))
+    ctx.sql(inventory(prefix))
+    ctx.sql(store_returns(prefix))
+    ctx.sql(store_sales(prefix))
+    ctx.sql(web_returns(prefix))
+    ctx.sql(web_sales(prefix))
+    
+    ctx.sql(call_center(prefix))
+    ctx.sql(catalog_page(prefix))
+    ctx.sql(customer(prefix))
+    ctx.sql(customer_address(prefix))
+    ctx.sql(customer_demographics(prefix))
+    ctx.sql(date_dim(prefix))
+    ctx.sql(household_demographics(prefix))
+    ctx.sql(income_band(prefix))
+    ctx.sql(item(prefix))
+    ctx.sql(promotion(prefix))
+    ctx.sql(reason(prefix))
+    ctx.sql(ship_mode(prefix))
+    ctx.sql(store(prefix))
+    ctx.sql(time_dim(prefix))
+    ctx.sql(warehouse(prefix))
+    ctx.sql(web_page(prefix))
+    ctx.sql(web_site(prefix))
+  }
 
-    // catalog_returns
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) cr_returned_date_sk,
-          |   cast(1 as long) cr_returned_time_sk,
-          |   cast(1 as long) cr_item_sk,
-          |   cast(1 as long) cr_refunded_customer_sk,
-          |   cast(1 as long) cr_refunded_cdemo_sk,
-          |   cast(1 as long) cr_refunded_hdemo_sk,
-          |   cast(1 as long) cr_refunded_addr_sk,
-          |   cast(1 as long) cr_returning_customer_sk,
-          |   cast(1 as long) cr_returning_cdemo_sk,
-          |   cast(1 as long) cr_returning_hdemo_sk,
-          |   cast(1 as long) cr_returning_addr_sk,
-          |   cast(1 as long) cr_call_center_sk,
-          |   cast(1 as long) cr_catalog_page_sk,
-          |   cast(1 as long) cr_ship_mode_sk,
-          |   cast(1 as long) cr_warehouse_sk,
-          |   cast(1 as long) cr_reason_sk,
-          |   cast(1 as long) cr_order_number,
-          |   cast(1 as int) cr_return_quantity,
-          |   cast(1 as decimal(7, 2)) cr_return_amount,
-          |   cast(1 as decimal(7, 2)) cr_return_tax,
-          |   cast(1 as decimal(7, 2)) cr_return_amt_inc_tax,
-          |   cast(1 as decimal(7, 2)) cr_fee,
-          |   cast(1 as decimal(7, 2)) cr_return_ship_cost,
-          |   cast(1 as decimal(7, 2)) cr_refunded_cash,
-          |   cast(1 as decimal(7, 2)) cr_reversed_charge,
-          |   cast(1 as decimal(7, 2)) cr_store_credit,
-          |   cast(1 as decimal(7, 2)) cr_net_loss
-      """.stripMargin).registerTempTable("catalog_returns")
+  //
+  // Fact tables
+  //
+  def catalog_returns(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}catalog_returns(
+        | cr_returned_date_sk BIGINT
+        | cr_returned_time_sk BIGINT,
+        | cr_item_sk BIGINT,
+        | cr_refunded_customer_sk BIGINT,
+        | cr_refunded_cdemo_sk BIGINT,
+        | cr_refunded_hdemo_sk BIGINT,
+        | cr_refunded_addr_sk BIGINT,
+        | cr_returning_customer_sk BIGINT,
+        | cr_returning_cdemo_sk BIGINT,
+        | cr_returning_hdemo_sk BIGINT,
+        | cr_returning_addr_sk BIGINT,
+        | cr_call_center_sk BIGINT,
+        | cr_catalog_page_sk BIGINT,
+        | cr_ship_mode_sk BIGINT,
+        | cr_warehouse_sk BIGINT,
+        | cr_reason_sk BIGINT,
+        | cr_order_number BIGINT,
+        | cr_return_quantity INT,
+        | cr_return_amount DECIMAL(7,2),
+        | cr_return_tax DECIMAL(7,2),
+        | cr_return_amt_inc_tax DECIMAL(7,2),
+        | cr_fee DECIMAL(7,2),
+        | cr_return_ship_cost DECIMAL(7,2),
+        | cr_refunded_cash DECIMAL(7,2),
+        | cr_reversed_charge DECIMAL(7,2),
+        | cr_store_credit DECIMAL(7,2),
+        | cr_net_loss DECIMAL(7,2)
+        |)""".stripMargin
+  }
+    
+  def catalog_sales(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}catalog_sales(
+        | cs_sold_date_sk BIGINT,
+        | cs_sold_time_sk BIGINT,
+        | cs_ship_date_sk BIGINT,
+        | cs_bill_customer_sk BIGINT,
+        | cs_bill_cdemo_sk BIGINT,
+        | cs_bill_hdemo_sk BIGINT,
+        | cs_bill_addr_sk BIGINT,
+        | cs_ship_customer_sk BIGINT,
+        | cs_ship_cdemo_sk BIGINT,
+        | cs_ship_hdemo_sk BIGINT,
+        | cs_ship_addr_sk BIGINT,
+        | cs_call_center_sk BIGINT,
+        | cs_catalog_page_sk BIGINT,
+        | cs_ship_mode_sk BIGINT,
+        | cs_warehouse_sk BIGINT,
+        | cs_item_sk BIGINT,
+        | cs_promo_sk BIGINT,
+        | cs_order_number BIGINT,
+        | cs_quantity BIGINT,
+        | cs_wholesale_cost DECIMAL(7,2),
+        | cs_list_price DECIMAL(7,2),
+        | cs_sales_price DECIMAL(7,2),
+        | cs_ext_discount_amt DECIMAL(7,2),
+        | cs_ext_sales_price DECIMAL(7,2),
+        | cs_ext_wholesale_cost DECIMAL(7,2),
+        | cs_ext_list_price DECIMAL(7,2),
+        | cs_ext_tax DECIMAL(7,2),
+        | cs_coupon_amt DECIMAL(7,2),
+        | cs_ext_ship_cost DECIMAL(7,2),
+        | cs_net_paid DECIMAL(7,2),
+        | cs_net_paid_inc_tax DECIMAL(7,2),
+        | cs_net_paid_inc_ship DECIMAL(7,2),
+        | cs_net_paid_inc_ship_tax DECIMAL(7,2),
+        | cs_net_profit DECIMAL(7,2)
+        |)""".stripMargin
+  }
 
-    // catalog_sales
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) cs_sold_date_sk,
-          |   cast(1 as long) cs_sold_time_sk,
-          |   cast(1 as long) cs_ship_date_sk,
-          |   cast(1 as long) cs_bill_customer_sk,
-          |   cast(1 as long) cs_bill_cdemo_sk,
-          |   cast(1 as long) cs_bill_hdemo_sk,
-          |   cast(1 as long) cs_bill_addr_sk,
-          |   cast(1 as long) cs_ship_customer_sk,
-          |   cast(1 as long) cs_ship_cdemo_sk,
-          |   cast(1 as long) cs_ship_hdemo_sk,
-          |   cast(1 as long) cs_ship_addr_sk,
-          |   cast(1 as long) cs_call_center_sk,
-          |   cast(1 as long) cs_catalog_page_sk,
-          |   cast(1 as long) cs_ship_mode_sk,
-          |   cast(1 as long) cs_warehouse_sk,
-          |   cast(1 as long) cs_item_sk,
-          |   cast(1 as long) cs_promo_sk,
-          |   cast(1 as long) cs_order_number,
-          |   cast(1 as long) cs_quantity,
-          |   cast(1 as decimal(7, 2)) cs_wholesale_cost,
-          |   cast(1 as decimal(7, 2)) cs_list_price,
-          |   cast(1 as decimal(7, 2)) cs_sales_price,
-          |   cast(1 as decimal(7, 2)) cs_ext_discount_amt,
-          |   cast(1 as decimal(7, 2)) cs_ext_sales_price,
-          |   cast(1 as decimal(7, 2)) cs_ext_wholesale_cost,
-          |   cast(1 as decimal(7, 2)) cs_ext_list_price,
-          |   cast(1 as decimal(7, 2)) cs_ext_tax,
-          |   cast(1 as decimal(7, 2)) cs_coupon_amt,
-          |   cast(1 as decimal(7, 2)) cs_ext_ship_cost,
-          |   cast(1 as decimal(7, 2)) cs_net_paid,
-          |   cast(1 as decimal(7, 2)) cs_net_paid_inc_tax,
-          |   cast(1 as decimal(7, 2)) cs_net_paid_inc_ship,
-          |   cast(1 as decimal(7, 2)) cs_net_paid_inc_ship_tax,
-          |   cast(1 as decimal(7, 2)) cs_net_profit
-      """.stripMargin).registerTempTable("catalog_sales")
+  def inventory(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}inventory(
+        | inv_date_sk BIGINT,
+        | inv_item_sk BIGINT,
+        | inv_warehouse_sk BIGINT,
+        | inv_quantity_on_hand INT
+        |)""".stripMargin
+  }
+  
+  def store_returns(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}store_returns(
+        | sr_returned_date_sk BIGINT,
+        | sr_return_time_sk BIGINT,
+        | sr_item_sk BIGINT,
+        | sr_customer_sk BIGINT,
+        | sr_cdemo_sk BIGINT,
+        | sr_hdemo_sk BIGINT,
+        | sr_addr_sk BIGINT,
+        | sr_store_sk BIGINT,
+        | sr_reason_sk BIGINT,
+        | sr_ticket_number BIGINT,
+        | sr_return_quantity BIGINT,
+        | sr_return_amt DECIMAL(7,2),
+        | sr_return_tax DECIMAL(7,2),
+        | sr_return_amt_inc_tax DECIMAL(7,2),
+        | sr_fee DECIMAL(7,2),
+        | sr_return_ship_cost DECIMAL(7,2),
+        | sr_refunded_cash DECIMAL(7,2),
+        | sr_reversed_charge DECIMAL(7,2),
+        | sr_store_credit DECIMAL(7,2),
+        | sr_net_loss DECIMAL(7,2)
+        |)""".stripMargin
+  }
+  
+  def store_sales(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}store_sales(
+        | ss_sold_date_sk BIGINT,
+        | ss_sold_time_sk BIGINT,
+        | ss_item_sk BIGINT,
+        | ss_customer_sk BIGINT,
+        | ss_cdemo_sk BIGINT,
+        | ss_hdemo_sk BIGINT,
+        | ss_addr_sk BIGINT,
+        | ss_store_sk BIGINT,
+        | ss_promo_sk BIGINT,
+        | ss_ticket_number BIGINT,
+        | ss_quantity BIGINT,
+        | ss_wholesale_cost DECIMAL(7,2),
+        | ss_list_price DECIMAL(7,2),
+        | ss_sales_price DECIMAL(7,2),
+        | ss_ext_discount_amt DECIMAL(7,2),
+        | ss_ext_sales_price DECIMAL(7,2),
+        | ss_ext_wholesale_cost DECIMAL(7,2),
+        | ss_ext_list_price DECIMAL(7,2),
+        | ss_ext_tax DECIMAL(7,2),
+        | ss_coupon_amt DECIMAL(7,2),
+        | ss_net_paid DECIMAL(7,2),
+        | ss_net_paid_inc_tax DECIMAL(7,2),
+        | ss_net_profit DECIMAL(7,2)
+        |)""".stripMargin
+  }
+  
+  def web_returns(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}web_returns(
+        | wr_returned_date_sk BIGINT,
+        | wr_returned_time_sk BIGINT,
+        | wr_item_sk BIGINT,
+        | wr_refunded_customer_sk BIGINT,
+        | wr_refunded_cdemo_sk BIGINT,
+        | wr_refunded_hdemo_sk BIGINT,
+        | wr_refunded_addr_sk BIGINT,
+        | wr_returning_customer_sk BIGINT,
+        | wr_returning_cdemo_sk BIGINT,
+        | wr_returning_hdemo_sk BIGINT,
+        | wr_returning_addr_sk BIGINT,
+        | wr_web_page_sk BIGINT,
+        | wr_reason_sk BIGINT,
+        | wr_order_number BIGINT,
+        | wr_return_quantity INT,
+        | wr_return_amt DECIMAL(7,2),
+        | wr_return_tax DECIMAL(7,2),
+        | wr_return_amt_inc_tax DECIMAL(7,2),
+        | wr_fee DECIMAL(7,2),
+        | wr_return_ship_cost DECIMAL(7,2),
+        | wr_refunded_cash DECIMAL(7,2),
+        | wr_reversed_charge DECIMAL(7,2),
+        | wr_account_credit DECIMAL(7,2),
+        | wr_net_loss DECIMAL(7,2)
+        |)""".stripMargin
+  }
+  
+  def web_sales(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}web_sales(
+        | ws_sold_date_sk BIGINT,
+        | ws_sold_time_sk BIGINT,
+        | ws_ship_date_sk BIGINT,
+        | ws_item_sk BIGINT,
+        | ws_bill_customer_sk BIGINT,
+        | ws_bill_cdemo_sk BIGINT,
+        | ws_bill_hdemo_sk BIGINT,
+        | ws_bill_addr_sk BIGINT,
+        | ws_ship_customer_sk BIGINT,
+        | ws_ship_cdemo_sk BIGINT,
+        | ws_ship_hdemo_sk BIGINT,
+        | ws_ship_addr_sk BIGINT,
+        | ws_web_page_sk BIGINT,
+        | ws_web_site_sk BIGINT,
+        | ws_ship_mode_sk BIGINT,
+        | ws_warehouse_sk BIGINT,
+        | ws_promo_sk BIGINT,
+        | ws_order_number BIGINT,
+        | ws_quantity BIGINT,
+        | ws_wholesale_cost DECIMAL(7,2),
+        | ws_list_price DECIMAL(7,2),
+        | ws_sales_price DECIMAL(7,2),
+        | ws_ext_discount_amt DECIMAL(7,2),
+        | ws_ext_sales_price DECIMAL(7,2),
+        | ws_ext_wholesale_cost DECIMAL(7,2),
+        | ws_ext_list_price DECIMAL(7,2),
+        | ws_ext_tax DECIMAL(7,2),
+        | ws_coupon_amt DECIMAL(7,2),
+        | ws_ext_ship_cost DECIMAL(7,2),
+        | ws_net_paid DECIMAL(7,2),
+        | ws_net_paid_inc_tax DECIMAL(7,2),
+        | ws_net_paid_inc_ship DECIMAL(7,2),
+        | ws_net_paid_inc_ship_tax DECIMAL(7,2),
+        | ws_net_profit DECIMAL(7,2)
+        |)""".stripMargin
+  }
+    
+  //
+  // Dimension tables
+  //
+  
+  def call_center(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}call_center
+        | cc_call_center_sk BIGINT,
+        | cc_call_center_id STRING,
+        | cc_rec_start_date DATE,
+        | cc_rec_end_date DATE,
+        | cc_closed_date_sk INT,
+        | cc_open_date_sk INT,
+        | cc_name VARCHAR(50),
+        | cc_class VARCHAR(50),
+        | cc_employees INT,
+        | cc_sq_ft INT,
+        | cc_hours STRING,
+        | cc_manager VARCHAR(40),
+        | cc_mkt_id INT,
+        | cc_mkt_class STRING,
+        | cc_mkt_desc VARCHAR(100),
+        | cc_market_manager VARCHAR(40),
+        | cc_division INT,
+        | cc_division_name VARCHAR(50),
+        | cc_company INT,
+        | cc_company_name STRING,
+        | cc_street_number STRING,
+        | cc_street_name STRING,
+        | cc_street_type STRING,
+        | cc_suite_number STRING,
+        | cc_city VARCHAR(60),
+        | cc_county VARCHAR(30),
+        | cc_state STRING,
+        | cc_zip STRING,
+        | cc_country VARCHAR(20),
+        | cc_gmt_offset DECIMAL(5,2),
+        | cc_tax_percentage DECIMAL(5,2)
+        |)""".stripMargin
+  }
 
-    // inventory
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) inv_date_sk,
-          |   cast(1 as long) inv_item_sk,
-          |   cast(1 as long) inv_warehouse_sk,
-          |   cast(1 as int) inv_quantity_on_hand
-        """.stripMargin).registerTempTable("inventory")
+  def catalog_page(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}catalog_page
+        | cp_catalog_page_sk BIGINT,
+        | cp_catalog_page_id STRING,
+        | cp_start_date_sk INT,
+        | cp_end_date_sk INT,
+        | cp_department VARCHAR(50),
+        | cp_catalog_number INT,
+        | cp_catalog_page_number INT,
+        | cp_description VARCHAR(100),
+        | cp_type VARCHAR(100)
+        |)""".stripMargin
+  }
 
-    // store_returns
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) sr_returned_date_sk,
-          |   cast(1 as long) sr_return_time_sk,
-          |   cast(1 as long) sr_item_sk,
-          |   cast(1 as long) sr_customer_sk,
-          |   cast(1 as long) sr_cdemo_sk,
-          |   cast(1 as long) sr_hdemo_sk,
-          |   cast(1 as long) sr_addr_sk,
-          |   cast(1 as long) sr_store_sk,
-          |   cast(1 as long) sr_reason_sk,
-          |   cast(1 as long) sr_ticket_number,
-          |   cast(1 as long) sr_return_quantity,
-          |   cast(1 as decimal(7, 2)) sr_return_amt,
-          |   cast(1 as decimal(7, 2)) sr_return_tax,
-          |   cast(1 as decimal(7, 2)) sr_return_amt_inc_tax,
-          |   cast(1 as decimal(7, 2)) sr_fee,
-          |   cast(1 as decimal(7, 2)) sr_return_ship_cost,
-          |   cast(1 as decimal(7, 2)) sr_refunded_cash,
-          |   cast(1 as decimal(7, 2)) sr_reversed_charge,
-          |   cast(1 as decimal(7, 2)) sr_store_credit,
-          |   cast(1 as decimal(7, 2)) sr_net_loss
-        """.stripMargin).registerTempTable("store_returns")
+  def customer(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}customer
+        |  c_customer_sk BIGINT,
+        |  c_customer_id STRING,
+        |  c_current_cdemo_sk BIGINT,
+        |  c_current_hdemo_sk BIGINT,
+        |  c_current_addr_sk BIGINT,
+        |  c_first_shipto_date_sk BIGINT,
+        |  c_first_sales_date_sk BIGINT,
+        |  c_salutation STRING,
+        |  c_first_name STRING,
+        |  c_last_name STRING,
+        |  c_preferred_cust_flag STRING,
+        |  c_birth_day SMALLINT,
+        |  c_birth_month SMALLINT,
+        |  c_birth_year SMALLINT,
+        |  c_birth_country STRING,
+        |  c_login STRING,
+        |  c_email_address STRING,
+        |  c_last_review_date_sk BIGINT
+        |)""".stripMargin
+  }
 
-    // reason
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) r_reason_sk,
-          |   cast("" as string) r_reason_id,
-          |   cast("" as string) r_reason_desc
-        """.stripMargin).registerTempTable("reason")
+  def customer_address(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}customer_address
+        | a_address_sk BIGINT,
+        | ca_address_id STRING,
+        | ca_street_number STRING,
+        | ca_street_name VARCHAR(60),
+        | ca_street_type STRING,
+        | ca_suite_number STRING,
+        | ca_city VARCHAR(60),
+        | ca_county VARCHAR(30),
+        | ca_state STRING,
+        | ca_zip STRING,
+        | ca_country VARCHAR(20),
+        | ca_gmt_offset DECIMAL(5,2),
+        | ca_location_type STRING
+        |)""".stripMargin
+  }
 
-    // store_sales
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) ss_sold_date_sk,
-          |   cast(1 as long) ss_sold_time_sk,
-          |   cast(1 as long) ss_item_sk,
-          |   cast(1 as long) ss_customer_sk,
-          |   cast(1 as long) ss_cdemo_sk,
-          |   cast(1 as long) ss_hdemo_sk,
-          |   cast(1 as long) ss_addr_sk,
-          |   cast(1 as long) ss_store_sk,
-          |   cast(1 as long) ss_promo_sk,
-          |   cast(1 as long) ss_ticket_number,
-          |   cast(1 as long) ss_quantity,
-          |   cast(1 as decimal(7, 2)) ss_wholesale_cost,
-          |   cast(1 as decimal(7, 2)) ss_list_price,
-          |   cast(1 as decimal(7, 2)) ss_sales_price,
-          |   cast(1 as decimal(7, 2)) ss_ext_discount_amt,
-          |   cast(1 as decimal(7, 2)) ss_ext_sales_price,
-          |   cast(1 as decimal(7, 2)) ss_ext_wholesale_cost,
-          |   cast(1 as decimal(7, 2)) ss_ext_list_price,
-          |   cast(1 as decimal(7, 2)) ss_ext_tax,
-          |   cast(1 as decimal(7, 2)) ss_coupon_amt,
-          |   cast(1 as decimal(7, 2)) ss_net_paid,
-          |   cast(1 as decimal(7, 2)) ss_net_paid_inc_tax,
-          |   cast(1 as decimal(7, 2)) ss_net_profit
-        """.stripMargin).registerTempTable("store_sales")
+  def customer_demographics(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}customer_demographics
+        | cd_demo_sk BIGINT,
+        | cd_gender STRING,
+        | cd_marital_status STRING,
+        | cd_education_status STRING,
+        | cd_purchase_estimate INT,
+        | cd_credit_rating STRING,
+        | cd_dep_count INT,
+        | cd_dep_employed_count INT,
+        | cd_dep_college_count INT
+        |)""".stripMargin
+  }
 
-    // web_returns
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) wr_returned_date_sk,
-          |   cast(1 as long) wr_returned_time_sk,
-          |   cast(1 as long) wr_item_sk,
-          |   cast(1 as long) wr_refunded_customer_sk,
-          |   cast(1 as long) wr_refunded_cdemo_sk,
-          |   cast(1 as long) wr_refunded_hdemo_sk,
-          |   cast(1 as long) wr_refunded_addr_sk,
-          |   cast(1 as long) wr_returning_customer_sk,
-          |   cast(1 as long) wr_returning_cdemo_sk,
-          |   cast(1 as long) wr_returning_hdemo_sk,
-          |   cast(1 as long) wr_returning_addr_sk,
-          |   cast(1 as long) wr_web_page_sk,
-          |   cast(1 as long) wr_reason_sk,
-          |   cast(1 as long) wr_order_number,
-          |   cast(1 as int) wr_return_quantity,
-          |   cast(1 as decimal(7, 2)) wr_return_amt,
-          |   cast(1 as decimal(7, 2)) wr_return_tax,
-          |   cast(1 as decimal(7, 2)) wr_return_amt_inc_tax,
-          |   cast(1 as decimal(7, 2)) wr_fee,
-          |   cast(1 as decimal(7, 2)) wr_return_ship_cost,
-          |   cast(1 as decimal(7, 2)) wr_refunded_cash,
-          |   cast(1 as decimal(7, 2)) wr_reversed_charge,
-          |   cast(1 as decimal(7, 2)) wr_account_credit,
-          |   cast(1 as decimal(7, 2)) wr_net_loss
-          |
-        """.stripMargin).registerTempTable("web_returns")
+  def date_dim(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}date_dim
+        | d_date_sk BIGINT,
+        | d_date_id STRING,
+        | d_date DATE,
+        | d_month_seq INT,
+        | d_week_seq INT,
+        | d_quarter_seq INT,
+        | d_year INT,
+        | d_dow INT,
+        | d_moy INT,
+        | d_dom INT,
+        | d_qoy INT,
+        | d_fy_year INT,
+        | d_fy_quarter_seq INT,
+        | d_fy_week_seq INT,
+        | d_day_name STRING,
+        | d_quarter_name STRING,
+        | d_holiday STRING,
+        | d_weekend STRING,
+        | d_following_holiday STRING,
+        | d_first_dom INT,
+        | d_last_dom INT,
+        | d_same_day_ly INT,
+        | d_same_day_lq INT,
+        | d_current_day STRING,
+        | d_current_week STRING,
+        | d_current_month STRING,
+        | d_current_quarter STRING,
+        | d_current_year STRING
+        |)""".stripMargin
+  }
 
-    // web_sales
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) as ws_sold_date_sk,
-          |   cast(1 as long) as ws_sold_time_sk,
-          |   cast(1 as long) as ws_ship_date_sk,
-          |   cast(1 as long) as ws_item_sk,
-          |   cast(1 as long) as ws_bill_customer_sk,
-          |   cast(1 as long) as ws_bill_cdemo_sk,
-          |   cast(1 as long) as ws_bill_hdemo_sk,
-          |   cast(1 as long) as ws_bill_addr_sk,
-          |   cast(1 as long) as ws_ship_customer_sk,
-          |   cast(1 as long) as ws_ship_cdemo_sk,
-          |   cast(1 as long) as ws_ship_hdemo_sk,
-          |   cast(1 as long) as ws_ship_addr_sk,
-          |   cast(1 as long) as ws_web_page_sk,
-          |   cast(1 as long) as ws_web_site_sk,
-          |   cast(1 as long) as ws_ship_mode_sk,
-          |   cast(1 as long) as ws_warehouse_sk,
-          |   cast(1 as long) as ws_promo_sk,
-          |   cast(1 as long) as ws_order_number,
-          |   cast(1 as long) as ws_quantity,
-          |   cast(1 as decimal(7,2)) as ws_wholesale_cost,
-          |   cast(1 as decimal(7,2)) as ws_list_price,
-          |   cast(1 as decimal(7,2)) as ws_sales_price,
-          |   cast(1 as decimal(7,2)) as ws_ext_discount_amt,
-          |   cast(1 as decimal(7,2)) as ws_ext_sales_price,
-          |   cast(1 as decimal(7,2)) as ws_ext_wholesale_cost,
-          |   cast(1 as decimal(7,2)) as ws_ext_list_price,
-          |   cast(1 as decimal(7,2)) as ws_ext_tax,
-          |   cast(1 as decimal(7,2)) as ws_coupon_amt,
-          |   cast(1 as decimal(7,2)) as ws_ext_ship_cost,
-          |   cast(1 as decimal(7,2)) as ws_net_paid,
-          |   cast(1 as decimal(7,2)) as ws_net_paid_inc_tax,
-          |   cast(1 as decimal(7,2)) as ws_net_paid_inc_ship,
-          |   cast(1 as decimal(7,2)) as ws_net_paid_inc_ship_tax,
-          |   cast(1 as decimal(7,2)) as ws_net_profit
-        """.stripMargin).registerTempTable("web_sales")
+  def household_demographics(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}household_demographics
+        | hd_demo_sk BIGINT,
+        | hd_income_band_sk BIGINT,
+        | hd_buy_potential STRING,
+        | hd_dep_count INT,
+        | hd_vehicle_count INT
+        |)""".stripMargin
+  }
 
-    //
-    // Dimension tables
-    //
+  def income_band(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}income_band
+        | ib_income_band_sk BIGINT,
+        | ib_lower_bound INT,
+        | ib_upper_bound INT
+        |)""".stripMargin
+  }
 
-    // call_center
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) cc_call_center_sk,
-          |   cast("" as string) cc_call_center_id,
-          |   cast(NULL as date) cc_rec_start_date,
-          |   cast(NULL as date) cc_rec_end_date,
-          |   cast(1 as int) cc_closed_date_sk,
-          |   cast(1 as int) cc_open_date_sk,
-          |   cast("" as varchar(50)) cc_name,
-          |   cast("" as varchar(50)) cc_class,
-          |   cast(1 as int) cc_employees,
-          |   cast(1 as int) cc_sq_ft,
-          |   cast("" as string) cc_hours,
-          |   cast("" as varchar(40)) cc_manager,
-          |   cast(1 as int) cc_mkt_id,
-          |   cast("" as string) cc_mkt_class,
-          |   cast("" as varchar(100)) cc_mkt_desc,
-          |   cast("" as varchar(40)) cc_market_manager,
-          |   cast(1 as int) cc_division,
-          |   cast("" as varchar(50)) cc_division_name,
-          |   cast(1 as int) cc_company,
-          |   cast("" as string) cc_company_name,
-          |   cast("" as string) cc_street_number,
-          |   cast("" as varchar(60)) cc_street_name,
-          |   cast("" as string) cc_street_type,
-          |   cast("" as string) cc_suite_number,
-          |   cast("" as varchar(60)) cc_city,
-          |   cast("" as varchar(30)) cc_county,
-          |   cast("" as string) cc_state,
-          |   cast("" as string) cc_zip,
-          |   cast("" as varchar(20)) cc_country,
-          |   cast(1 as decimal(5, 2)) cc_gmt_offset,
-          |   cast(1 as decimal(5, 2)) cc_tax_percentage
-        """.stripMargin).registerTempTable("call_center")
+  def item(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}item
+        | i_item_sk BIGINT,
+        | i_item_id STRING,
+        | i_rec_start_date,
+        | i_rec_end_date,
+        | i_item_desc STRING,
+        | i_current_price DECIMAL(7,2),
+        | i_wholesale_cost DECIMAL(7,2),
+        | i_brand_id INT,
+        | i_brand STRING,
+        | i_class_id INT,
+        | i_class STRING,
+        | i_category_id INT,
+        | i_category STRING,
+        | i_manufact_id INT,
+        | i_manufact STRING,
+        | i_size STRING,
+        | i_formulation STRING,
+        | i_color STRING,
+        | i_units STRING,
+        | i_container STRING,
+        | i_manager_id INT,
+        | i_product_name STRING
+        |)""".stripMargin
+  }
 
-    // catalog_page
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) cp_catalog_page_sk,
-          |   cast("" as string) cp_catalog_page_id,
-          |   cast(1 as int) cp_start_date_sk,
-          |   cast(1 as int) cp_end_date_sk,
-          |   cast("" as varchar(50)) cp_department,
-          |   cast(1 as int) cp_catalog_number,
-          |   cast(1 as int) cp_catalog_page_number,
-          |   cast("" as varchar(100)) cp_description,
-          |   cast("" as varchar(100)) cp_type
-        """.stripMargin).registerTempTable("catalog_page")
+  def promotion(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}promotion
+        | p_promo_sk BIGINT,
+        | p_promo_id STRING,
+        | p_start_date_sk BIGINT,
+        | p_end_date_sk BIGINT,
+        | p_item_sk BIGINT,
+        | p_cost DECIMAL(15,2),
+        | p_response_target,
+        | p_promo_name STRING,
+        | p_channel_dmail STRING,
+        | p_channel_email STRING,
+        | p_channel_catalog STRING,
+        | p_channel_tv STRING,
+        | p_channel_radio STRING,
+        | p_channel_press STRING,
+        | p_channel_event STRING,
+        | p_channel_demo STRING,
+        | p_channel_details VARCHAR(100),
+        | p_purpose STRING,
+        | p_discount_active STRING
+        |)""".stripMargin
+  }
 
-    // customer
-    ctx.sql(
-      s"""SELECT
-         |   cast(1 as long) c_customer_sk,
-         |   cast("" as string) c_customer_id,
-         |   cast(1 as long) c_current_cdemo_sk,
-         |   cast(1 as long) c_current_hdemo_sk,
-         |   cast(1 as long) c_current_addr_sk,
-         |   cast(1 as long) c_first_shipto_date_sk,
-         |   cast(1 as long) c_first_sales_date_sk,
-         |   cast("" as string) c_salutation,
-         |   cast("" as string) c_first_name,
-         |   cast("" as string) c_last_name,
-         |   cast("" as string) c_preferred_cust_flag,
-         |   cast(1 as smallint) c_birth_day,
-         |   cast(1 as smallint) c_birth_month,
-         |   cast(1 as smallint) c_birth_year,
-         |   cast("" as string) c_birth_country,
-         |   cast("" as string) c_login,
-         |   cast("" as string) c_email_address,
-         |   cast(1 as long) c_last_review_date_sk
-        """.stripMargin).registerTempTable("customer")
+  def reason(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}reason
+        | r_reason_sk BIGINT,
+        | r_reason_id STRING,
+        | r_reason_desc STRING
+        |)""".stripMargin
+  }
 
-    // customer_address
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) ca_address_sk,
-          |   cast("" as string) ca_address_id,
-          |   cast("" as string) ca_street_number,
-          |   cast("" as varchar(60)) ca_street_name,
-          |   cast("" as string) ca_street_type,
-          |   cast("" as string) ca_suite_number,
-          |   cast("" as varchar(60)) ca_city,
-          |   cast("" as varchar(30)) ca_county,
-          |   cast("" as string) ca_state,
-          |   cast("" as string) ca_zip,
-          |   cast("" as varchar(20)) ca_country,
-          |   cast(1 as decimal(5, 2)) ca_gmt_offset,
-          |   cast("" as string) ca_location_type
-        """.stripMargin).registerTempTable("customer_address")
+  def ship_mode(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}ship_mode
+        | sm_ship_mode_sk BIGINT,
+        | sm_ship_mode_id STRING,
+        | sm_type STRING,
+        | sm_code STRING,
+        | sm_carrier STRING,
+        | sm_contract STRING
+        |)""".stripMargin
+  }
 
-    // customer_demographics
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) cd_demo_sk,
-          |   cast("" as string) cd_gender,
-          |   cast("" as string) cd_marital_status,
-          |   cast("" as string) cd_education_status,
-          |   cast(1 as int) cd_purchase_estimate,
-          |   cast("" as string) cd_credit_rating,
-          |   cast(1 as int) cd_dep_count,
-          |   cast(1 as int) cd_dep_employed_count,
-          |   cast(1 as int) cd_dep_college_count
-        """.stripMargin).registerTempTable("customer_demographics")
+  def store(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}store
+        | s_store_sk BIGINT,
+        | s_store_id STRING,
+        | s_rec_start_date DATE,
+        | s_rec_end_date DATE,
+        | s_closed_date_sk BIGINT,
+        | s_store_name VARCHAR(50),
+        | s_number_employees INT,
+        | s_floor_space INT,
+        | s_hours STRING,
+        | s_manager VARCHAR(40),
+        | s_market_id INT,
+        | s_geography_class VARCHAR(100),
+        | s_market_desc VARCHAR(100),
+        | s_market_manager VARCHAR(40),
+        | s_division_id INT,
+        | s_division_name VARCHAR(50),
+        | s_company_id INT,
+        | s_company_name VARCHAR(50),
+        | s_street_number VARCHAR(10),
+        | s_street_name VARCHAR(60),
+        | s_street_type STRING,
+        | s_suite_number STRING,
+        | s_city VARCHAR(60),
+        | s_county VARCHAR(30),
+        | s_state STRING,
+        | s_zip STRING,
+        | s_country VARCHAR(20),
+        | s_gmt_offset DECIMAL(5,2),
+        | s_tax_percentage DECIMAL(5,2)
+        |)""".stripMargin
+  }
 
-    // date_dim
-    ctx.sql(
-       s"""SELECT
-          |   cast(1 as long) d_date_sk,
-          |   cast("" as string) d_date_id,
-          |   cast(NULL as date) d_date,
-          |   cast(1 as int) d_month_seq,
-          |   cast(1 as int) d_week_seq,
-          |   cast(1 as int) d_quarter_seq,
-          |   cast(1 as int) d_year,
-          |   cast(1 as int) d_dow,
-          |   cast(1 as int) d_moy,
-          |   cast(1 as int) d_dom,
-          |   cast(1 as int) d_qoy,
-          |   cast(1 as int) d_fy_year,
-          |   cast(1 as int) d_fy_quarter_seq,
-          |   cast(1 as int) d_fy_week_seq,
-          |   cast("" as string) d_day_name,
-          |   cast("" as string) d_quarter_name,
-          |   cast("" as string) d_holiday,
-          |   cast("" as string) d_weekend,
-          |   cast("" as string) d_following_holiday,
-          |   cast(1 as int) d_first_dom,
-          |   cast(1 as int) d_last_dom,
-          |   cast(1 as int) d_same_day_ly,
-          |   cast(1 as int) d_same_day_lq,
-          |   cast("" as string) d_current_day,
-          |   cast("" as string) d_current_week,
-          |   cast("" as string) d_current_month,
-          |   cast("" as string) d_current_quarter,
-          |   cast("" as string) d_current_year
-        """.stripMargin).registerTempTable("date_dim")
+  def time_dim(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}time_dim
+        | t_time_sk BIGINT,
+        | t_time_id STRING,
+        | t_time INT,
+        | t_hour INT,
+        | t_minute INT,
+        | t_second INT,
+        | t_am_pm STRING,
+        | t_shift STRING,
+        | t_sub_shift STRING,
+        | t_meal_time STRING
+      """.stripMargin
+  }
 
-    // household_demographics
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) hd_demo_sk,
-          |   cast(1 as long) hd_income_band_sk,
-          |   cast("" as string) hd_buy_potential,
-          |   cast(1 as int) hd_dep_count,
-          |   cast(1 as int) hd_vehicle_count
-        """.stripMargin).registerTempTable("household_demographics")
+  def warehouse(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}warehouse
+        | w_warehouse_sk BIGINT,
+        | w_warehouse_id STRING,
+        | w_warehouse_name,
+        | w_warehouse_sq_ft INT,
+        | w_street_number STRING,
+        | w_street_name VARCHAR(60),
+        | w_street_type STRING,
+        | w_suite_number STRING,
+        | w_city VARCHAR(60),
+        | w_county VARCHAR(30),
+        | w_state STRING,
+        | w_zip STRING,
+        | w_country VARCHAR(20),
+        | w_gmt_offset DECIMAL(5,2)
+        |)""".stripMargin
+  }
 
-    // income_band
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) ib_income_band_sk,
-          |   cast(1 as int) ib_lower_bound,
-          |   cast(1 as int) ib_upper_bound
-        """.stripMargin).registerTempTable("income_band")
+  def web_page(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}web_page
+        | wp_web_page_sk BIGINT,
+        | wp_web_page_id STRING,
+        | wp_rec_start_date DATE,
+        | wp_rec_end_date DATE,
+        | wp_creation_date_sk BIGINT,
+        | wp_access_date_sk BIGINT,
+        | wp_autogen_flag STRING,
+        | wp_customer_sk BIGINT,
+        | wp_url VARCHAR(100),
+        | wp_type STRING,
+        | wp_char_count INT,
+        | wp_link_count INT,
+        | wp_image_count INT,
+        | wp_max_ad_count INT
+        |)""".stripMargin
+  }
 
-    // item
-    ctx.sql(
-      s"""SELECT
-         |   cast(1 as long) i_item_sk,
-         |   cast("" as string) i_item_id,
-         |   cast(NULL as date) i_rec_start_date,
-         |   cast(NULL as date) i_rec_end_date,
-         |   cast("" as string) i_item_desc,
-         |   cast(1 as decimal(7, 2)) i_current_price,
-         |   cast(1 as decimal(7, 2)) i_wholesale_cost,
-         |   cast(1 as int) i_brand_id,
-         |   cast("" as string) i_brand,
-         |   cast(1 as int) i_class_id,
-         |   cast("" as string) i_class,
-         |   cast(1 as int) i_category_id,
-         |   cast("" as string) i_category,
-         |   cast(1 as int) i_manufact_id,
-         |   cast("" as string) i_manufact,
-         |   cast("" as string) i_size,
-         |   cast("" as string) i_formulation,
-         |   cast("" as string) i_color,
-         |   cast("" as string) i_units,
-         |   cast("" as string) i_container,
-         |   cast(1 as int) i_manager_id,
-         |   cast("" as string) i_product_name
-        """.stripMargin).registerTempTable("item")
-
-    // promotion
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) p_promo_sk,
-          |   cast("" as string) p_promo_id,
-          |   cast(1 as long) p_start_date_sk,
-          |   cast(1 as long) p_end_date_sk,
-          |   cast(1 as long) p_item_sk,
-          |   cast(1 as decimal(15, 2)) p_cost,
-          |   cast(1 as int) p_response_target,
-          |   cast("" as string) p_promo_name,
-          |   cast("" as string) p_channel_dmail,
-          |   cast("" as string) p_channel_email,
-          |   cast("" as string) p_channel_catalog,
-          |   cast("" as string) p_channel_tv,
-          |   cast("" as string) p_channel_radio,
-          |   cast("" as string) p_channel_press,
-          |   cast("" as string) p_channel_event,
-          |   cast("" as string) p_channel_demo,
-          |   cast("" as varchar(100)) p_channel_details,
-          |   cast("" as string) p_purpose,
-          |   cast("" as string) p_discount_active
-        """.stripMargin).registerTempTable("promotion")
-
-    // ship_mode
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) sm_ship_mode_sk,
-          |   cast("" as string) sm_ship_mode_id,
-          |   cast("" as string) sm_type,
-          |   cast("" as string) sm_code,
-          |   cast("" as string) sm_carrier,
-          |   cast("" as string) sm_contract
-        """.stripMargin).registerTempTable("ship_mode")
-
-    // store
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) s_store_sk,
-          |   cast("" as string) s_store_id,
-          |   cast(NULL as date) s_rec_start_date,
-          |   cast(NULL as date) s_rec_end_date ,
-          |   cast(1 as long) s_closed_date_sk,
-          |   cast("" as varchar(50)) s_store_name,
-          |   cast(1 as int) s_number_employees,
-          |   cast(1 as int) s_floor_space,
-          |   cast("" as string) s_hours,
-          |   cast("" as varchar(40)) s_manager,
-          |   cast(1 as int) S_market_id,
-          |   cast("" as varchar(100)) s_geography_class,
-          |   cast("" as varchar(100)) s_market_desc,
-          |   cast("" as varchar(40)) s_market_manager,
-          |   cast(1 as int) s_division_id,
-          |   cast("" as varchar(50)) s_division_name,
-          |   cast(1 as int) s_company_id,
-          |   cast("" as varchar(50)) s_company_name,
-          |   cast("" as varchar(10)) s_street_number,
-          |   cast("" as varchar(60)) s_street_name,
-          |   cast("" as string) s_street_type,
-          |   cast("" as string) s_suite_number,
-          |   cast("" as varchar(60)) s_city,
-          |   cast("" as varchar(30)) s_county,
-          |   cast("" as string) s_state,
-          |   cast("" as string) s_zip,
-          |   cast("" as varchar(20)) s_country,
-          |   cast(1 as decimal(5, 2)) s_gmt_offset,
-          |   cast(1 as decimal(5, 2)) s_tax_percentage
-        """.stripMargin).registerTempTable("store")
-
-    // time_dim
-    ctx.sql(
-      s"""SELECT
-          |   cast (1 as long) t_time_sk,
-          |   cast ("" as string) t_time_id,
-          |   cast(1 as int) t_time,
-          |   cast(1 as int) t_hour,
-          |   cast(1 as int) t_minute,
-          |   cast(1 as int) t_second,
-          |   cast ("" as string) t_am_pm,
-          |   cast ("" as string) t_shift,
-          |   cast ("" as string) t_sub_shift,
-          |   cast ("" as string) t_meal_time
-        """.stripMargin).registerTempTable("time_dim")
-
-    // warehouse
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) w_warehouse_sk,
-          |   cast("" as string) w_warehouse_id,
-          |   cast("" as varchar(20)) w_warehouse_name,
-          |   cast(1 as int) w_warehouse_sq_ft,
-          |   cast("" as string) w_street_number,
-          |   cast("" as varchar(60)) w_street_name,
-          |   cast("" as string) w_street_type,
-          |   cast("" as string) w_suite_number,
-          |   cast("" as varchar(60)) w_city,
-          |   cast("" as varchar(30)) w_county,
-          |   cast("" as string) w_state,
-          |   cast("" as string) w_zip,
-          |   cast("" as varchar(20)) w_country,
-          |   cast(1 as decimal(5, 2)) w_gmt_offset
-        """.stripMargin).registerTempTable("warehouse")
-
-    // web_page
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) wp_web_page_sk,
-          |   cast("" as string) wp_web_page_id,
-          |   cast(NULL as date) wp_rec_start_date,
-          |   cast(NULL as date) wp_rec_end_date,
-          |   cast(1 as long) wp_creation_date_sk,
-          |   cast(1 as long) wp_access_date_sk,
-          |   cast("" as string) wp_autogen_flag,
-          |   cast(1 as long) wp_customer_sk,
-          |   cast("" as varchar(100)) wp_url,
-          |   cast("" as string) wp_type,
-          |   cast(1 as int) wp_char_count,
-          |   cast(1 as int) wp_link_count,
-          |   cast(1 as int) wp_image_count,
-          |   cast(1 as int) wp_max_ad_count
-        """.stripMargin).registerTempTable("web_page")
-
-    // web_site
-    ctx.sql(
-      s"""SELECT
-          |   cast(1 as long) web_site_sk,
-          |   cast("" as string) web_site_id,
-          |   cast(NULL as date) web_rec_start_date,
-          |   cast(NULL as date) web_rec_end_date,
-          |   cast("" as varchar(50)) web_name,
-          |   cast(1 as long) web_open_date_sk,
-          |   cast(1 as long) web_close_date_sk,
-          |   cast("" as varchar(50)) web_class,
-          |   cast("" as varchar(40)) web_manager,
-          |   cast(1 as int) web_mkt_id,
-          |   cast("" as varchar(50)) web_mkt_class,
-          |   cast("" as varchar(100)) web_mkt_desc,
-          |   cast("" as varchar(40)) web_market_manager,
-          |   cast(1 as int) web_company_id,
-          |   cast("" as string) web_company_name,
-          |   cast("" as string) web_street_number,
-          |   cast("" as varchar(60)) web_street_name,
-          |   cast("" as string) web_street_type,
-          |   cast("" as string) web_suite_number,
-          |   cast("" as varchar(60)) web_city,
-          |   cast("" as varchar(30)) web_county,
-          |   cast("" as string) web_state,
-          |   cast("" as string) web_zip,
-          |   cast("" as varchar(20)) web_country,
-          |   cast(1 as decimal(5, 2)) web_gmt_offset,
-          |   cast(1 as decimal(5, 2)) web_tax_percentage
-        """.stripMargin).registerTempTable("web_site")
-
-     Seq("call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer",
-       "customer_address", "customer_demographics",
-       "date_dim", "household_demographics", "income_band", "inventory", "item", "promotion",
-       "reason", "ship_mode",
-       "store", "store_returns", "store_sales", "time_dim",
-       "warehouse", "web_page", "web_returns", "web_sales", "web_site")
+  def web_site(prefix: String): String = {
+    s"""CREATE TEMPORARY TABLE {$prefix}web_site
+        | wp_web_page_sk BIGINT,
+        | wp_web_page_id STRING,
+        | wp_rec_start_date DATE,
+        | wp_rec_end_date DATE,
+        | wp_creation_date_sk BIGINT,
+        | wp_access_date_sk BIGINT,
+        | wp_autogen_flag STRING,
+        | wp_customer_sk BIGINT,
+        | wp_url VARCHAR(100),
+        | wp_type STRING,
+        | wp_char_count INT,
+        | wp_link_count INT,
+        | wp_image_count INT,
+        | wp_max_ad_count INT
+        |)""".stripMargin
   }
 
   /**

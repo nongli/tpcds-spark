@@ -19,8 +19,6 @@ package com.databricks.spark.tpcds
 
 import org.apache.spark.sql.SQLContext
 
-import scala.util.Random
-
 object TpcdsBenchmark {
   /**
    * Represents a single TPCDS query. Queries can contain multiple parts and each part should be
@@ -173,45 +171,66 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   // rollup: 18, 22, 27, 77 
   // Error? 5, 80
 
+  var dbPrefix: String = ""
+  var tableGenPrefix: String = ""
+  var format: String = "ROW FORMAT DELIMITED FIELDS TERMINATED BY '|'"
+
   /**
     * Registers all the tables as temp tables in `db`.
     * TODO: non-nullable columns (there many)
     * TODO: support CHAR(N)
     */
-  def registerTables(db: Option[String] = None) = {
-    val prefix = ""
-    ctx.sql(catalog_returns(prefix))
-    ctx.sql(catalog_sales(prefix))
-    ctx.sql(inventory(prefix))
-    ctx.sql(store_returns(prefix))
-    ctx.sql(store_sales(prefix))
-    ctx.sql(web_returns(prefix))
-    ctx.sql(web_sales(prefix))
+  def registerTables(
+      rootDir: Option[String] = None,
+      location: Option[String] = None,
+      format: Option[String] = None,
+      db: Option[String] = None): Unit = {
+
+    if (db.isDefined) dbPrefix = db.get + "."
+
+    // TODO: come up with a hive style partitioning for these datasets.
+    // How does dynamic partition pruning work?
+    ctx.sql(catalog_returns())
+    ctx.sql(catalog_sales())
+    ctx.sql(inventory())
+    ctx.sql(store_returns())
+    ctx.sql(store_sales())
+    ctx.sql(web_returns())
+    ctx.sql(web_sales())
     
-    ctx.sql(call_center(prefix))
-    ctx.sql(catalog_page(prefix))
-    ctx.sql(customer(prefix))
-    ctx.sql(customer_address(prefix))
-    ctx.sql(customer_demographics(prefix))
-    ctx.sql(date_dim(prefix))
-    ctx.sql(household_demographics(prefix))
-    ctx.sql(income_band(prefix))
-    ctx.sql(item(prefix))
-    ctx.sql(promotion(prefix))
-    ctx.sql(reason(prefix))
-    ctx.sql(ship_mode(prefix))
-    ctx.sql(store(prefix))
-    ctx.sql(time_dim(prefix))
-    ctx.sql(warehouse(prefix))
-    ctx.sql(web_page(prefix))
-    ctx.sql(web_site(prefix))
+    ctx.sql(call_center())
+    ctx.sql(catalog_page())
+    ctx.sql(customer())
+    ctx.sql(customer_address())
+    ctx.sql(customer_demographics())
+    ctx.sql(date_dim())
+    ctx.sql(household_demographics())
+    ctx.sql(income_band())
+    ctx.sql(item())
+    ctx.sql(promotion())
+    ctx.sql(reason())
+    ctx.sql(ship_mode())
+    ctx.sql(store())
+    ctx.sql(time_dim())
+    ctx.sql(warehouse())
+    ctx.sql(web_page())
+    ctx.sql(web_site())
+  }
+
+  private def createStmt(table: String, schema: String): String = {
+    val location = s"LOCATION '/Users/nong/Data/tpcds-sf5/$table/'"
+    s"""
+       | CREATE TEMPORARY EXTERNAL TABLE ${dbPrefix}${table}(
+       |    ${schema.trim}
+       |)${format} ${location}""".stripMargin
   }
 
   //
   // Fact tables
   //
-  def catalog_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}catalog_returns(
+  def catalog_returns(): String = {
+    createStmt("catalog_returns",
+      s"""
         | cr_returned_date_sk BIGINT,
         | cr_returned_time_sk BIGINT,
         | cr_item_sk BIGINT,
@@ -239,11 +258,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | cr_reversed_charge DECIMAL(7,2),
         | cr_store_credit DECIMAL(7,2),
         | cr_net_loss DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
     
-  def catalog_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}catalog_sales(
+  def catalog_sales(): String = {
+    createStmt("catalog_sales",
+      s"""
         | cs_sold_date_sk BIGINT,
         | cs_sold_time_sk BIGINT,
         | cs_ship_date_sk BIGINT,
@@ -278,20 +298,22 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | cs_net_paid_inc_ship DECIMAL(7,2),
         | cs_net_paid_inc_ship_tax DECIMAL(7,2),
         | cs_net_profit DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def inventory(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}inventory(
+  def inventory(): String = {
+    createStmt("inventory",
+      s"""
         | inv_date_sk BIGINT,
         | inv_item_sk BIGINT,
         | inv_warehouse_sk BIGINT,
         | inv_quantity_on_hand INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
   
-  def store_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}store_returns(
+  def store_returns(): String = {
+    createStmt("store_returns",
+      s"""
         | sr_returned_date_sk BIGINT,
         | sr_return_time_sk BIGINT,
         | sr_item_sk BIGINT,
@@ -312,11 +334,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | sr_reversed_charge DECIMAL(7,2),
         | sr_store_credit DECIMAL(7,2),
         | sr_net_loss DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
   
-  def store_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}store_sales(
+  def store_sales(): String = {
+    createStmt("store_sales",
+      s"""
         | ss_sold_date_sk BIGINT,
         | ss_sold_time_sk BIGINT,
         | ss_item_sk BIGINT,
@@ -340,11 +363,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | ss_net_paid DECIMAL(7,2),
         | ss_net_paid_inc_tax DECIMAL(7,2),
         | ss_net_profit DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
   
-  def web_returns(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_returns(
+  def web_returns(): String = {
+    createStmt("web_returns",
+      s"""
         | wr_returned_date_sk BIGINT,
         | wr_returned_time_sk BIGINT,
         | wr_item_sk BIGINT,
@@ -369,11 +393,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | wr_reversed_charge DECIMAL(7,2),
         | wr_account_credit DECIMAL(7,2),
         | wr_net_loss DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
   
-  def web_sales(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_sales(
+  def web_sales(): String = {
+    createStmt("web_sales",
+      s"""
         | ws_sold_date_sk BIGINT,
         | ws_sold_time_sk BIGINT,
         | ws_ship_date_sk BIGINT,
@@ -408,15 +433,16 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | ws_net_paid_inc_ship DECIMAL(7,2),
         | ws_net_paid_inc_ship_tax DECIMAL(7,2),
         | ws_net_profit DECIMAL(7,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
     
   //
   // Dimension tables
   //
   
-  def call_center(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}call_center(
+  def call_center(): String = {
+    createStmt("call_center",
+      s"""
         | cc_call_center_sk BIGINT,
         | cc_call_center_id STRING,
         | cc_rec_start_date DATE,
@@ -448,11 +474,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | cc_country VARCHAR(20),
         | cc_gmt_offset DECIMAL(5,2),
         | cc_tax_percentage DECIMAL(5,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def catalog_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}catalog_page(
+  def catalog_page(): String = {
+    createStmt("catalog_page",
+      s"""
         | cp_catalog_page_sk BIGINT,
         | cp_catalog_page_id STRING,
         | cp_start_date_sk INT,
@@ -462,11 +489,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | cp_catalog_page_number INT,
         | cp_description VARCHAR(100),
         | cp_type VARCHAR(100)
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def customer(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer(
+  def customer(): String = {
+    createStmt("customer",
+      s"""
         | c_customer_sk BIGINT,
         | c_customer_id STRING,
         | c_current_cdemo_sk BIGINT,
@@ -485,11 +513,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | c_login STRING,
         | c_email_address STRING,
         | c_last_review_date_sk BIGINT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def customer_address(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer_address(
+  def customer_address(): String = {
+    createStmt("customer_address",
+      s"""
         | ca_address_sk BIGINT,
         | ca_address_id STRING,
         | ca_street_number STRING,
@@ -503,11 +532,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | ca_country VARCHAR(20),
         | ca_gmt_offset DECIMAL(5,2),
         | ca_location_type STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def customer_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer_demographics(
+  def customer_demographics(): String = {
+    createStmt("customer_demographics",
+      s"""
         | cd_demo_sk BIGINT,
         | cd_gender STRING,
         | cd_marital_status STRING,
@@ -517,11 +547,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | cd_dep_count INT,
         | cd_dep_employed_count INT,
         | cd_dep_college_count INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def date_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}date_dim(
+  def date_dim(): String = {
+    createStmt("date_dim",
+      s"""
         | d_date_sk BIGINT,
         | d_date_id STRING,
         | d_date DATE,
@@ -550,29 +581,32 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | d_current_month STRING,
         | d_current_quarter STRING,
         | d_current_year STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def household_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}household_demographics(
+  def household_demographics(): String = {
+    createStmt("household_demographics",
+      s"""
         | hd_demo_sk BIGINT,
         | hd_income_band_sk BIGINT,
         | hd_buy_potential STRING,
         | hd_dep_count INT,
         | hd_vehicle_count INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def income_band(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}income_band(
+  def income_band(): String = {
+    createStmt("income_band",
+      s"""
         | ib_income_band_sk BIGINT,
         | ib_lower_bound INT,
         | ib_upper_bound INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def item(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}item(
+  def item(): String = {
+    createStmt("item",
+      s"""
         | i_item_sk BIGINT,
         | i_item_id STRING,
         | i_rec_start_date DATE,
@@ -595,11 +629,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | i_container STRING,
         | i_manager_id INT,
         | i_product_name STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def promotion(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}promotion(
+  def promotion(): String = {
+    createStmt("promotion",
+      s"""
         | p_promo_sk BIGINT,
         | p_promo_id STRING,
         | p_start_date_sk BIGINT,
@@ -619,30 +654,33 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | p_channel_details VARCHAR(100),
         | p_purpose STRING,
         | p_discount_active STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def reason(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}reason(
+  def reason(): String = {
+    createStmt("reason",
+      s"""
         | r_reason_sk BIGINT,
         | r_reason_id STRING,
         | r_reason_desc STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def ship_mode(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}ship_mode(
+  def ship_mode(): String = {
+    createStmt("ship_mode",
+      s"""
         | sm_ship_mode_sk BIGINT,
         | sm_ship_mode_id STRING,
         | sm_type STRING,
         | sm_code STRING,
         | sm_carrier STRING,
         | sm_contract STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def store(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}store(
+  def store(): String = {
+    createStmt("store",
+      s"""
         | s_store_sk BIGINT,
         | s_store_id STRING,
         | s_rec_start_date DATE,
@@ -672,11 +710,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | s_country VARCHAR(20),
         | s_gmt_offset DECIMAL(5,2),
         | s_tax_percentage DECIMAL(5,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def time_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}time_dim(
+  def time_dim(): String = {
+    createStmt("time_dim",
+      s"""
         | t_time_sk BIGINT,
         | t_time_id STRING,
         | t_time INT,
@@ -687,11 +726,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | t_shift STRING,
         | t_sub_shift STRING,
         | t_meal_time STRING
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def warehouse(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}warehouse(
+  def warehouse(): String = {
+    createStmt("warehouse",
+      s"""
         | w_warehouse_sk BIGINT,
         | w_warehouse_id STRING,
         | w_warehouse_name VARCHAR(20),
@@ -706,11 +746,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | w_zip STRING,
         | w_country VARCHAR(20),
         | w_gmt_offset DECIMAL(5,2)
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def web_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_page(
+  def web_page(): String = {
+    createStmt("web_page",
+      s"""
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -725,11 +766,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | wp_link_count INT,
         | wp_image_count INT,
         | wp_max_ad_count INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
-  def web_site(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_site(
+  def web_site(): String = {
+    createStmt("web_site",
+      s"""
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -744,7 +786,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | wp_link_count INT,
         | wp_image_count INT,
         | wp_max_ad_count INT
-        |)""".stripMargin
+        |""".stripMargin)
   }
 
   /**

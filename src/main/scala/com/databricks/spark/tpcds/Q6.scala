@@ -32,14 +32,11 @@ object Q6 {
          | 	AND s.ss_sold_date_sk = d.d_date_sk
          | 	AND s.ss_item_sk = i.i_item_sk
          | 	AND d.d_month_seq =
-         | 	     (SELECT distinct (d_month_seq)
-         | 	      FROM date_dim
-         |               WHERE d_year = $year
-         | 	        AND d_moy = $month)
+         | 	     (SELECT distinct (d_month_seq) FROM date_dim 
+         |        WHERE d_year = $year AND d_moy = $month)
          | 	AND i.i_current_price > 1.2 *
-         |             (SELECT avg(j.i_current_price)
-         | 	     FROM item j
-         | 	     WHERE j.i_category = i.i_category)
+         |             (SELECT avg(j.i_current_price) FROM item j
+         | 	            WHERE j.i_category = i.i_category)
          | GROUP BY a.ca_state
          | HAVING count(*) >= 10
          | ORDER BY cnt LIMIT 100

@@ -49,7 +49,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
       case 9 => Q9.query(this).queries.head
       case 10 => Q10.query(this).queries.head
       case 11 => Q11.query(this).queries.head
-      case 12 => q12()
+      case 12 => Q12.query(this).queries.head
       case 13 => q13()
       case 14 => q14()
       case 15 => q15()
@@ -147,16 +147,31 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   def allQueries(): Seq[String] = {
     (1 to 99).map(getQuery(_))
   }
+  
+  /**
+    * Returns all the queries that are currently supported using hiveql
+    */
+  def hiveQLSupportedQueries(): Seq[Int] = {
+    Seq(3, 4, 7, 11, 13, 15, 17, 19, 21, 25, 26, 28, 29, 31, 34, 37, 40, 42, 43, 46, 47, 48, 49, 51,
+      52, 53, 55, 57, 59, 61, 64, 65, 68, 71, 72, 73, 74, 75, 76, 78, 79, 82, 84, 85, 88, 90, 91,
+      93, 96, 97)
+  }
 
   /**
-    * Returns all the queries that are currently supported.
+    * Returns all the queries that are currently supported using sql dialect.
     */
   // revisit q39
-  def supportedQueries(): Seq[String] = {
+  def supportedQueries(): Seq[Int] = {
     Seq(2, 3, 4, 7, 8, 11, 13, 15, 17, 19, 21, 25, 26, 28, 29, 31, 34, 37, 38, 40, 42, 43, 46, 48,
       52, 55, 59, 61, 64, 65, 66, 68, 71, 72, 73, 74, 75, 76, 78, 79, 82, 84, 85, 87, 88, 90, 91,
-      93, 96, 97).map(getQuery(_))
+      93, 96, 97)
   }
+
+  // Subquery: 1, 6, 9, 14, 23, 24, 30, 33, 35, 41, 45, 54, 56, 58, 60, 69, 81, 83 
+  // Window functions 12, 20, 36, 44, 63, 67, 70, 86, 89, 98
+  // Alias: 16, 32, 50, 62, 92, 94, 95, 99
+  // rollup: 18, 22, 27, 77 
+  // Error? 5, 80
 
   /**
     * Registers all the tables as temp tables in `db`.
@@ -401,7 +416,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   //
   
   def call_center(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}call_center
+    s"""CREATE TEMPORARY TABLE ${prefix}call_center(
         | cc_call_center_sk BIGINT,
         | cc_call_center_id STRING,
         | cc_rec_start_date DATE,
@@ -437,7 +452,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def catalog_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}catalog_page
+    s"""CREATE TEMPORARY TABLE ${prefix}catalog_page(
         | cp_catalog_page_sk BIGINT,
         | cp_catalog_page_id STRING,
         | cp_start_date_sk INT,
@@ -451,31 +466,31 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def customer(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer
-        |  c_customer_sk BIGINT,
-        |  c_customer_id STRING,
-        |  c_current_cdemo_sk BIGINT,
-        |  c_current_hdemo_sk BIGINT,
-        |  c_current_addr_sk BIGINT,
-        |  c_first_shipto_date_sk BIGINT,
-        |  c_first_sales_date_sk BIGINT,
-        |  c_salutation STRING,
-        |  c_first_name STRING,
-        |  c_last_name STRING,
-        |  c_preferred_cust_flag STRING,
-        |  c_birth_day SMALLINT,
-        |  c_birth_month SMALLINT,
-        |  c_birth_year SMALLINT,
-        |  c_birth_country STRING,
-        |  c_login STRING,
-        |  c_email_address STRING,
-        |  c_last_review_date_sk BIGINT
+    s"""CREATE TEMPORARY TABLE ${prefix}customer(
+        | c_customer_sk BIGINT,
+        | c_customer_id STRING,
+        | c_current_cdemo_sk BIGINT,
+        | c_current_hdemo_sk BIGINT,
+        | c_current_addr_sk BIGINT,
+        | c_first_shipto_date_sk BIGINT,
+        | c_first_sales_date_sk BIGINT,
+        | c_salutation STRING,
+        | c_first_name STRING,
+        | c_last_name STRING,
+        | c_preferred_cust_flag STRING,
+        | c_birth_day SMALLINT,
+        | c_birth_month SMALLINT,
+        | c_birth_year SMALLINT,
+        | c_birth_country STRING,
+        | c_login STRING,
+        | c_email_address STRING,
+        | c_last_review_date_sk BIGINT
         |)""".stripMargin
   }
 
   def customer_address(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer_address
-        | a_address_sk BIGINT,
+    s"""CREATE TEMPORARY TABLE ${prefix}customer_address(
+        | ca_address_sk BIGINT,
         | ca_address_id STRING,
         | ca_street_number STRING,
         | ca_street_name VARCHAR(60),
@@ -492,7 +507,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def customer_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}customer_demographics
+    s"""CREATE TEMPORARY TABLE ${prefix}customer_demographics(
         | cd_demo_sk BIGINT,
         | cd_gender STRING,
         | cd_marital_status STRING,
@@ -506,7 +521,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def date_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}date_dim
+    s"""CREATE TEMPORARY TABLE ${prefix}date_dim(
         | d_date_sk BIGINT,
         | d_date_id STRING,
         | d_date DATE,
@@ -539,7 +554,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def household_demographics(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}household_demographics
+    s"""CREATE TEMPORARY TABLE ${prefix}household_demographics(
         | hd_demo_sk BIGINT,
         | hd_income_band_sk BIGINT,
         | hd_buy_potential STRING,
@@ -549,7 +564,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def income_band(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}income_band
+    s"""CREATE TEMPORARY TABLE ${prefix}income_band(
         | ib_income_band_sk BIGINT,
         | ib_lower_bound INT,
         | ib_upper_bound INT
@@ -557,11 +572,11 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def item(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}item
+    s"""CREATE TEMPORARY TABLE ${prefix}item(
         | i_item_sk BIGINT,
         | i_item_id STRING,
-        | i_rec_start_date,
-        | i_rec_end_date,
+        | i_rec_start_date DATE,
+        | i_rec_end_date DATE,
         | i_item_desc STRING,
         | i_current_price DECIMAL(7,2),
         | i_wholesale_cost DECIMAL(7,2),
@@ -584,14 +599,14 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def promotion(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}promotion
+    s"""CREATE TEMPORARY TABLE ${prefix}promotion(
         | p_promo_sk BIGINT,
         | p_promo_id STRING,
         | p_start_date_sk BIGINT,
         | p_end_date_sk BIGINT,
         | p_item_sk BIGINT,
         | p_cost DECIMAL(15,2),
-        | p_response_target,
+        | p_response_target INT,
         | p_promo_name STRING,
         | p_channel_dmail STRING,
         | p_channel_email STRING,
@@ -608,7 +623,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def reason(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}reason
+    s"""CREATE TEMPORARY TABLE ${prefix}reason(
         | r_reason_sk BIGINT,
         | r_reason_id STRING,
         | r_reason_desc STRING
@@ -616,7 +631,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def ship_mode(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}ship_mode
+    s"""CREATE TEMPORARY TABLE ${prefix}ship_mode(
         | sm_ship_mode_sk BIGINT,
         | sm_ship_mode_id STRING,
         | sm_type STRING,
@@ -627,7 +642,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def store(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}store
+    s"""CREATE TEMPORARY TABLE ${prefix}store(
         | s_store_sk BIGINT,
         | s_store_id STRING,
         | s_rec_start_date DATE,
@@ -661,7 +676,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def time_dim(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}time_dim
+    s"""CREATE TEMPORARY TABLE ${prefix}time_dim(
         | t_time_sk BIGINT,
         | t_time_id STRING,
         | t_time INT,
@@ -672,14 +687,14 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
         | t_shift STRING,
         | t_sub_shift STRING,
         | t_meal_time STRING
-      """.stripMargin
+        |)""".stripMargin
   }
 
   def warehouse(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}warehouse
+    s"""CREATE TEMPORARY TABLE ${prefix}warehouse(
         | w_warehouse_sk BIGINT,
         | w_warehouse_id STRING,
-        | w_warehouse_name,
+        | w_warehouse_name VARCHAR(20),
         | w_warehouse_sq_ft INT,
         | w_street_number STRING,
         | w_street_name VARCHAR(60),
@@ -695,7 +710,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def web_page(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_page
+    s"""CREATE TEMPORARY TABLE ${prefix}web_page(
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -714,7 +729,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   def web_site(prefix: String): String = {
-    s"""CREATE TEMPORARY TABLE ${prefix}web_site
+    s"""CREATE TEMPORARY TABLE ${prefix}web_site(
         | wp_web_page_sk BIGINT,
         | wp_web_page_id STRING,
         | wp_rec_start_date DATE,
@@ -775,7 +790,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   /** 
    *  If randomize, returns a random category. Otherwise, returns 'v'.
    */
-  private def getCategory(v: String): String = {
+  private[tpcds] def getCategory(v: String): String = {
     if (randomize) {
       getValue("Sports", "Books", "Home", "Electronics", "Jewelry")
     } else {
@@ -852,7 +867,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
    * If randomize, returns a random list of |v| using p to generate the list.
    * Otherwise, returns v.
    */
-  private def getList[A](v: Seq[A], p: (A) => A): Seq[A] = {
+  private[tpcds] def getList[A](v: Seq[A], p: (A) => A): Seq[A] = {
     if (randomize) {
       v.map(x => p(v.head))
     } else {
@@ -865,46 +880,6 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     */
   private[tpcds] def toInList(v: Seq[Any]): String = {
     v.map(x => s"'$x'").mkString(", ")
-  }
-
-  // [UNSUPPORTED]: window functions
-  def q12(): String = {
-    val year = uniformRand(1999, 1998, 2002)
-    // TODO: define SDATE=date([YEAR]+"-01-01",[YEAR]+"-07-01",sales);
-    val sdate = date(s"$year-02-022")
-    val categories = toInList(getList(Seq("Sports", "Books", "Home"), getCategory))
-    s"""
-       | select i_item_desc
-       |      ,i_category
-       |      ,i_class
-       |      ,i_current_price
-       |      ,sum(ws_ext_sales_price) as itemrevenue
-       |      ,sum(ws_ext_sales_price)*100/sum(sum(ws_ext_sales_price)) over
-       |          (partition by i_class) as revenueratio
-       | from
-       |	web_sales
-       |    	,item
-       |    	,date_dim
-       | where
-       |	ws_item_sk = i_item_sk
-       |  	and i_category in ($categories)
-       |  	and ws_sold_date_sk = d_date_sk
-       |	and d_date between cast('$sdate' as date)
-       |				and (cast('$sdate]' as date) + 30 days)
-       | group by
-       |	i_item_id
-       |        ,i_item_desc
-       |        ,i_category
-       |        ,i_class
-       |        ,i_current_price
-       | order by
-       |	i_category
-       |        ,i_class
-       |        ,i_item_id
-       |        ,i_item_desc
-       |        ,revenueratio
-       | LIMIT 100
-     """.stripMargin
   }
 
   def q13(): String = {
@@ -977,7 +952,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |with  cross_items as
        | (select i_item_sk ss_item_sk
        | from item,
-       | (select iss.i_brand_id brand_id
+       |    (select iss.i_brand_id brand_id
        |     ,iss.i_class_id class_id
        |     ,iss.i_category_id category_id
        | from store_sales
@@ -1074,37 +1049,25 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        | ) y
        | group by rollup (channel, i_brand_id,i_class_id,i_category_id)
        | order by channel,i_brand_id,i_class_id,i_category_id
-       | limit 100
+       | limit 100;
        |
        | with  cross_items as
        | (select i_item_sk ss_item_sk
        | from item,
-       | (select iss.i_brand_id brand_id
-       |     ,iss.i_class_id class_id
-       |     ,iss.i_category_id category_id
-       | from store_sales
-       |     ,item iss
-       |     ,date_dim d1
+       | (select iss.i_brand_id brand_id, iss.i_class_id class_id, iss.i_category_id category_id
+       | from store_sales, item iss, date_dim d1
        | where ss_item_sk = iss.i_item_sk
        |   and ss_sold_date_sk = d1.d_date_sk
        |   and d1.d_year between 1999 AND 1999 + 2
        | intersect
-       | select ics.i_brand_id
-       |     ,ics.i_class_id
-       |     ,ics.i_category_id
-       | from catalog_sales
-       |     ,item ics
-       |     ,date_dim d2
+       | select ics.i_brand_id, ics.i_class_id, ics.i_category_id
+       | from catalog_sales, item ics, date_dim d2
        | where cs_item_sk = ics.i_item_sk
        |   and cs_sold_date_sk = d2.d_date_sk
        |   and d2.d_year between 1999 AND 1999 + 2
        | intersect
-       | select iws.i_brand_id
-       |     ,iws.i_class_id
-       |     ,iws.i_category_id
-       | from web_sales
-       |     ,item iws
-       |     ,date_dim d3
+       | select iws.i_brand_id, iws.i_class_id, iws.i_category_id
+       | from web_sales, item iws, date_dim d3
        | where ws_item_sk = iws.i_item_sk
        |   and ws_sold_date_sk = d3.d_date_sk
        |   and d3.d_year between 1999 AND 1999 + 2) x
@@ -1116,22 +1079,17 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |(select avg(quantity*list_price) average_sales
        |  from (select ss_quantity quantity
        |             ,ss_list_price list_price
-       |       from store_sales
-       |           ,date_dim
+       |       from store_sales, date_dim
        |       where ss_sold_date_sk = d_date_sk
        |         and d_year between $year and $year + 2
        |       union all
-       |       select cs_quantity quantity
-       |             ,cs_list_price list_price
-       |       from catalog_sales
-       |           ,date_dim
+       |       select cs_quantity quantity, cs_list_price list_price
+       |       from catalog_sales, date_dim
        |       where cs_sold_date_sk = d_date_sk
        |         and d_year between $year and $year + 2
        |       union all
-       |       select ws_quantity quantity
-       |             ,ws_list_price list_price
-       |       from web_sales
-       |           ,date_dim
+       |       select ws_quantity quantity, ws_list_price list_price
+       |       from web_sales, date_dim
        |       where ws_sold_date_sk = d_date_sk
        |         and d_year between $year and $year + 2) x)
        | select * from
@@ -1209,17 +1167,14 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
 
     s"""
        | select
-       |   count(distinct cs_order_number) as "order count"
-       |  ,sum(cs_ext_ship_cost) as "total shipping cost"
-       |  ,sum(cs_net_profit) as "total net profit"
+       |   count(distinct cs_order_number) as "order count",
+       |   sum(cs_ext_ship_cost) as "total shipping cost",
+       |   sum(cs_net_profit) as "total net profit"
        |from
-       |   catalog_sales cs1
-       |  ,date_dim
-       |  ,customer_address
-       |  ,call_center
+       |   catalog_sales cs1, date_dim, customer_address, call_center
        |where
        |    d_date between '$year-$month-01' and
-       |           (cast('$year-$month-01' as date) + 60 days)
+       |           (cast('$year-$month-01' as date) + 60)
        |and cs1.cs_ship_date_sk = d_date_sk
        |and cs1.cs_ship_addr_sk = ca_address_sk
        |and ca_state = '$state'
@@ -1358,7 +1313,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |   and i_category in ($categories)
        |   and cs_sold_date_sk = d_date_sk
        | and d_date between cast('$sdate' as date)
-       | 				and (cast('$sdate' as date) + 30 days)
+       | 				and date_add(cast('$sdate' as date), 30)
        | group by i_item_id, i_item_desc, i_category, i_class, i_current_price
        | order by i_category, i_class, i_item_id, i_item_desc, revenueratio
        | limit 100
@@ -1413,7 +1368,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // {UNSUPPORTED]: Subquery
+  // [UNSUPPORTED]: Subquery
   def q23(): String = {
     val year = uniformRand(2000, 1998, 2000)
     val month = uniformRand(2, 1, 7)
@@ -1509,7 +1464,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // {UNSUPPORTED]: Subquery
+  // [UNSUPPORTED]: Subquery
   def q24(): String = {
     val market = uniformRand(8, 5, 10)
     val amount = getValue("ss_net_paid", "ss_net_paid_inc_tax", "ss_net_profit", "ss_sales_price",
@@ -2063,7 +2018,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED]: window function
+  // [UNSUPPORTED]: window function, rollup
   def q36(): String = {
     val year = uniformRand(2001, 1998, 2002)
     // TODO: define STATENUMBER=ulist(random(1, rowcount("active_states", "store"), uniform),8);
@@ -2438,7 +2393,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED]: window functions
+  // [UNSUPPORTED]: window functions, works with hive dialect
   def q47(): String = {
     val year = uniformRand(1999, 1999, 2001)
     val selectone = getValue("v1.i_category, v1.i_brand, v1.s_store_name, v1.s_company_name",
@@ -2567,7 +2522,8 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // {UNSUPPORTED]: window functions
+  // [UNSUPPORTED]: window functions; works in hiveql
+  // [MODIFICATIONS Hive] dec->decimal
   def q49(): String = {
     val year = uniformRand(2001, 1998, 2002)
     val month = uniformRand(12, 11, 12)
@@ -2580,15 +2536,15 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        | 	  rank() over (order by currency_ratio) as currency_rank
        | 	from
        | 	(	select ws.ws_item_sk as item
-       | 		,(cast(sum(coalesce(wr.wr_return_quantity,0)) as dec(15,4))/
-       | 		cast(sum(coalesce(ws.ws_quantity,0)) as dec(15,4) )) as return_ratio
-       | 		,(cast(sum(coalesce(wr.wr_return_amt,0)) as dec(15,4))/
-       | 		cast(sum(coalesce(ws.ws_net_paid,0)) as dec(15,4) )) as currency_ratio
+       | 		,(cast(sum(coalesce(wr.wr_return_quantity,0)) as decimal(15,4))/
+       | 		cast(sum(coalesce(ws.ws_quantity,0)) as decimal(15,4) )) as return_ratio
+       | 		,(cast(sum(coalesce(wr.wr_return_amt,0)) as decimal(15,4))/
+       | 		cast(sum(coalesce(ws.ws_net_paid,0)) as decimal(15,4) )) as currency_ratio
        | 		from
        | 		 web_sales ws left outer join web_returns wr
        | 			on (ws.ws_order_number = wr.wr_order_number and
        | 			ws.ws_item_sk = wr.wr_item_sk)
-       |                 ,date_dim
+       |        ,date_dim
        | 		where
        | 			wr.wr_return_amt > 10000
        | 			and ws.ws_net_profit > 1
@@ -2613,10 +2569,10 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        | 	from
        | 	(	select
        | 		cs.cs_item_sk as item
-       | 		,(cast(sum(coalesce(cr.cr_return_quantity,0)) as dec(15,4))/
-       | 		cast(sum(coalesce(cs.cs_quantity,0)) as dec(15,4) )) as return_ratio
-       | 		,(cast(sum(coalesce(cr.cr_return_amount,0)) as dec(15,4))/
-       | 		cast(sum(coalesce(cs.cs_net_paid,0)) as dec(15,4) )) as currency_ratio
+       | 		,(cast(sum(coalesce(cr.cr_return_quantity,0)) as decimal(15,4))/
+       | 		cast(sum(coalesce(cs.cs_quantity,0)) as decimal(15,4) )) as return_ratio
+       | 		,(cast(sum(coalesce(cr.cr_return_amount,0)) as decimal(15,4))/
+       | 		cast(sum(coalesce(cs.cs_net_paid,0)) as decimal(15,4) )) as currency_ratio
        | 		from
        | 		catalog_sales cs left outer join catalog_returns cr
        | 			on (cs.cs_order_number = cr.cr_order_number and
@@ -2645,8 +2601,8 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        | 	    rank() over (order by currency_ratio) as currency_rank
        | 	from
        | 	(	select sts.ss_item_sk as item
-       | 		,(cast(sum(coalesce(sr.sr_return_quantity,0)) as dec(15,4))/cast(sum(coalesce(sts.ss_quantity,0)) as dec(15,4) )) as return_ratio
-       | 		,(cast(sum(coalesce(sr.sr_return_amt,0)) as dec(15,4))/cast(sum(coalesce(sts.ss_net_paid,0)) as dec(15,4) )) as currency_ratio
+       | 		,(cast(sum(coalesce(sr.sr_return_quantity,0)) as decimal(15,4))/cast(sum(coalesce(sts.ss_quantity,0)) as decimal(15,4) )) as return_ratio
+       | 		,(cast(sum(coalesce(sr.sr_return_amt,0)) as decimal(15,4))/cast(sum(coalesce(sts.ss_net_paid,0)) as decimal(15,4) )) as currency_ratio
        | 		from
        | 		store_sales sts left outer join store_returns sr
        | 			on (sts.ss_ticket_number = sr.sr_ticket_number and sts.ss_item_sk = sr.sr_item_sk)
@@ -2706,7 +2662,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
 
-  // [UNSUPPORTED]: window functions
+  // [UNSUPPORTED]: window functions; works in hiveql
   def q51(): String = {
     val dms = uniformRand(1200, 1176, 1224)
     s"""
@@ -2774,7 +2730,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED] Window functions
+  // [UNSUPPORTED] Window functions; works in hiveql
   def q53(): String = {
     val dms = uniformRand(1200, 1172, 1224)
     s"""
@@ -2937,10 +2893,10 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |    i_item_id in (select i_item_id from item where i_color in ($colors))
        | and     ws_item_sk              = i_item_sk
        | and     ws_sold_date_sk         = d_date_sk
-       | and     d_year                  = [YEAR]
-       | and     d_moy                   = [MONTH]
+       | and     d_year                  = $year 
+       | and     d_moy                   = $month
        | and     ws_bill_addr_sk         = ca_address_sk
-       | and     ca_gmt_offset           = [GMT]
+       | and     ca_gmt_offset           = $gmt
        | group by i_item_id)
        | select i_item_id ,sum(total_sales) total_sales
        | from  (select * from ss
@@ -2954,7 +2910,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED]: window functions
+  // [UNSUPPORTED]: window functions, works in hiveql
   def q57(): String = {
     val year = uniformRand(1999, 1999, 2001)
     val selectone = getValue("v1.i_category, v1.i_brand, v1.cc_name", "v1.i_category", "v1.i_brand",
@@ -2967,21 +2923,19 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |        d_year, d_moy,
        |        sum(cs_sales_price) sum_sales,
        |        avg(sum(cs_sales_price)) over
-       |          (partition by i_category, i_brand,
-       |                     cc_name, d_year)
+       |          (partition by i_category, i_brand, cc_name, d_year)
        |          avg_monthly_sales,
        |        rank() over
-       |          (partition by i_category, i_brand,
-       |                     cc_name
+       |          (partition by i_category, i_brand, cc_name
        |           order by d_year, d_moy) rn
        | from item, catalog_sales, date_dim, call_center
        | where cs_item_sk = i_item_sk and
        |       cs_sold_date_sk = d_date_sk and
        |       cc_call_center_sk= cs_call_center_sk and
        |       (
-       |         d_year = [YEAR] or
-       |         ( d_year = [YEAR]-1 and d_moy =12) or
-       |         ( d_year = [YEAR]+1 and d_moy =1)
+       |         d_year = $year or
+       |         ( d_year = $year-1 and d_moy =12) or
+       |         ( d_year = $year+1 and d_moy =1)
        |       )
        | group by i_category, i_brand,
        |          cc_name , d_year, d_moy),
@@ -3000,7 +2954,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |       v1.rn = v1_lag.rn + 1 and
        |       v1.rn = v1_lead.rn - 1)
        | select * from v2
-       | where  d_year = [YEAR] and
+       | where  d_year = $year and
        |        avg_monthly_sales > 0 and
        |        case when avg_monthly_sales > 0 then abs(sum_sales - avg_monthly_sales) / avg_monthly_sales else null end > 0.1
        | order by sum_sales - avg_monthly_sales, 3
@@ -3014,8 +2968,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     val salesdate = "2000-01-03"
     s"""
        | with ss_items as
-       | (select i_item_id item_id
-       |        ,sum(ss_ext_sales_price) ss_item_rev
+       | (select i_item_id item_id, sum(ss_ext_sales_price) ss_item_rev
        | from store_sales, item, date_dim
        | where ss_item_sk = i_item_sk
        |   and d_date in (select d_date
@@ -3156,10 +3109,10 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |        i_item_id in (select i_item_id from item where i_category in ('$category'))
        |    and     ws_item_sk              = i_item_sk
        |    and     ws_sold_date_sk         = d_date_sk
-       |    and     d_year                  = [YEAR]
-       |    and     d_moy                   = [MONTH]
+       |    and     d_year                  = $year
+       |    and     d_moy                   = $month
        |    and     ws_bill_addr_sk         = ca_address_sk
-       |    and     ca_gmt_offset           = [GMT]
+       |    and     ca_gmt_offset           = $gmt
        |    group by i_item_id)
        | select i_item_id, sum(total_sales) total_sales
        | from  (select * from ss
@@ -3245,7 +3198,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED]: window functions
+  // [UNSUPPORTED]: window functions works in hiveql
   def q63(): String = {
     val dms = uniformRand(1200, 1176, 1224)
     s"""
@@ -3415,7 +3368,8 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // MODIFICATIONS: || --> concat
+  // [MODIFICATIONS]: || --> concat
+  // Doesn't work in hiveql
   def q66(): String = {
     val year = uniformRand(2001, 1998, 2002)
     val time = uniformRand(30838, 1, 57597)
@@ -3679,7 +3633,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |        (select s_state as s_state,
        | 			      rank() over ( partition by s_state order by sum(ss_net_profit) desc) as ranking
        |         from store_sales, store, date_dim
-       |         where  d_month_seq between [DMS] and [DMS]+11
+       |         where  d_month_seq between $dms and $dms+11
        | 			   and d_date_sk = ss_sold_date_sk
        | 			   and s_store_sk  = ss_store_sk
        |         group by s_state) tmp1
@@ -4264,7 +4218,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // {UNSUPPORTED]: subquery
+  // [UNSUPPORTED]: subquery
   def q83(): String = {
     // TODO  RETURNED_DATE_ONE=date([YEAR]+"-01-01",[YEAR]+"-07-24",sales);
     val returned_dates = toInList(Seq("2000-06-30", "2000-09-27", "2000-11-17"))
@@ -4282,7 +4236,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |  from catalog_returns, item, date_dim
        |  where cr_item_sk = i_item_sk
        |      and d_date in (select d_date from date_dim where d_week_seq in
-       |		      (select d_week_seq from date_dim where d_date in ($returned_dates')))
+       |		      (select d_week_seq from date_dim where d_date in ($returned_dates)))
        |      and cr_returned_date_sk   = d_date_sk
        |      group by i_item_id),
        | wr_items as
@@ -4290,7 +4244,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |  from web_returns, item, date_dim
        |  where wr_item_sk = i_item_sk and d_date in
        |      (select d_date	from date_dim	where d_week_seq in
-       |		      (select d_week_seq from date_dim where d_date in ($returned_dates')))
+       |		      (select d_week_seq from date_dim where d_date in ($returned_dates)))
        |    and wr_returned_date_sk = d_date_sk
        |  group by i_item_id)
        | select sr_items.item_id
@@ -4572,7 +4526,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
      """.stripMargin
   }
 
-  // [UNSUPPORTED]: Window functions
+  // [UNSUPPORTED]: Window functions, works in hiveql
   def q89(): String = {
     val year = uniformRand(1999, 1998, 2002)
     val classes1 = toInList(Seq("computers", "stereo", "football"))
@@ -4824,6 +4778,7 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   // [UNSUPPORTED]: window functions
+  // [MODIFICATIONS]: date_add
   def q98(): String = {
     // TODO: Define SDATE=date([YEAR]+"-01-01",[YEAR]+"-07-01",sales);
     val sdate = "1999-02-22"
@@ -4843,11 +4798,11 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
        |  	and i_category in ($categories)
        |  	and ss_sold_date_sk = d_date_sk
        |	and d_date between cast('$sdate' as date)
-       |				and (cast('$sdate' as date) + 30 days)
+       |				and date_add(cast('$sdate' as date), 30)
        |group by
        |	i_item_id, i_item_desc, i_category, i_class, i_current_price
        |order by
-       |	i_category, i_class, i_item_id, i_item_desc, revenueratio;
+       |	i_category, i_class, i_item_id, i_item_desc, revenueratio
      """.stripMargin
   }
 

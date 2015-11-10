@@ -31,8 +31,7 @@ object Q8 {
          | from store_sales, date_dim, store,
          |     (SELECT ca_zip
          |       from (
-         |       (SELECT substr(ca_zip,1,5) ca_zip
-         |          FROM customer_address
+         |       (SELECT substr(ca_zip,1,5) ca_zip FROM customer_address
          |          WHERE substr(ca_zip,1,5) IN ($zips))
          |       INTERSECT
          |       (select ca_zip
@@ -42,8 +41,8 @@ object Q8 {
          |              WHERE ca_address_sk = c_current_addr_sk and
          |                    c_preferred_cust_flag='Y'
          |              group by ca_zip
-         |              having count(*) > 10) A1
-         |        )) A2
+         |              having count(*) > 10) A1)
+         |         ) A2
          |      ) V1
          | where ss_store_sk = s_store_sk
          |  and ss_sold_date_sk = d_date_sk

@@ -165,14 +165,25 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
       93, 96, 97)
   }
 
+  /**
+    * List of queries that run at the SF=5 locally (hiveql)
+    */
+  def runnableQueries(): Seq[Int] = {
+    Seq(3, 4, 7)
+  }
+
   // Subquery: 1, 6, 9, 14, 23, 24, 30, 33, 35, 41, 45, 54, 56, 58, 60, 69, 81, 83 
   // Window functions 12, 20, 36, 44, 63, 67, 70, 86, 89, 98
   // Alias: 16, 32, 50, 62, 92, 94, 95, 99
   // rollup: 18, 22, 27, 77 
   // Error? 5, 80
 
+  // OOM: 13
+  // No results: 11
+
   var dbPrefix: String = ""
   var tableGenPrefix: String = ""
+  var location: String = ""
   var format: String = "ROW FORMAT DELIMITED FIELDS TERMINATED BY '|'"
 
   /**
@@ -181,12 +192,12 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
     * TODO: support CHAR(N)
     */
   def registerTables(
-      rootDir: Option[String] = None,
-      location: Option[String] = None,
+      rootDir: String = "",
       format: Option[String] = None,
       db: Option[String] = None): Unit = {
 
     if (db.isDefined) dbPrefix = db.get + "."
+    location = rootDir
 
     // TODO: come up with a hive style partitioning for these datasets.
     // How does dynamic partition pruning work?
@@ -218,11 +229,19 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   }
 
   private def createStmt(table: String, schema: String): String = {
-    val location = s"LOCATION '/Users/nong/Data/tpcds-sf5/$table/'"
-    s"""
-       | CREATE TEMPORARY EXTERNAL TABLE ${dbPrefix}${table}(
-       |    ${schema.trim}
-       |)${format} ${location}""".stripMargin
+    if (location.isEmpty) {
+      s"""
+         |CREATE TEMPORARY EXTERNAL TABLE ${dbPrefix}${table}(
+         |  ${schema.trim}
+         |)
+       """.stripMargin
+    } else {
+      val locationStr = s"LOCATION '$location/$table/'"
+      s"""
+        | CREATE TEMPORARY EXTERNAL TABLE ${dbPrefix}${table}(
+        |    ${schema.trim}
+        |)${format} ${locationStr}""".stripMargin
+    }
   }
 
   //
@@ -772,20 +791,32 @@ case class TpcdsBenchmark(val ctx: SQLContext, val randomize: Boolean = false) {
   def web_site(): String = {
     createStmt("web_site",
       s"""
-        | wp_web_page_sk BIGINT,
-        | wp_web_page_id STRING,
-        | wp_rec_start_date DATE,
-        | wp_rec_end_date DATE,
-        | wp_creation_date_sk BIGINT,
-        | wp_access_date_sk BIGINT,
-        | wp_autogen_flag STRING,
-        | wp_customer_sk BIGINT,
-        | wp_url VARCHAR(100),
-        | wp_type STRING,
-        | wp_char_count INT,
-        | wp_link_count INT,
-        | wp_image_count INT,
-        | wp_max_ad_count INT
+         | web_site_sk              BIGINT,
+         | web_site_id              STRING,
+         | web_rec_start_date       DATE,
+         | web_rec_end_date         DATE,
+         | web_name                 VARCHAR(50),
+         | web_open_date_sk         BIGINT,
+         | web_close_date_sk        BIGINT,
+         | web_class                VARCHAR(50),
+         | web_manager              VARCHAR(40),
+         | web_mkt_id               INT,
+         | web_mkt_class            VARCHAR(50),
+         | web_mkt_desc             VARCHAR(100),
+         | web_market_manager       VARCHAR(40),
+         | web_company_id           INT,
+         | web_company_name         STRING,
+         | web_street_number        STRING,
+         | web_street_name          VARCHAR(60),
+         | web_street_type          STRING,
+         | web_suite_number         STRING,
+         | web_city                 VARCHAR(60),
+         | web_county               VARCHAR(30),
+         | web_state                STRING,
+         | web_zip                  STRING,
+         | web_country              VARCHAR(20),
+         | web_gmt_offset           DECIMAL(5,2),
+         | web_tax_percentage       DECIMAL(5,2)
         |""".stripMargin)
   }
 
